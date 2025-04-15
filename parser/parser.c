@@ -6,16 +6,21 @@
 #include "parser.h"
 
 #define MAX_LINE_LENGTH 256
+#define MAX_TOKENS 10
+#define MAX_TOKEN_LENGTH 64
 
 typedef struct cmd_props
 {
     Command type;
-    const char *type_string;
+    const char *cmd;
+    const char *arg1;
+    const char *arg2;
 
 } Command_Props;
 
 static FILE *input = NULL;
 static char current_line[MAX_LINE_LENGTH];
+static char tokens[MAX_TOKENS][MAX_TOKEN_LENGTH];
 
 void parser_create(char *filename)
 {
@@ -89,21 +94,59 @@ static void strip(char *line)
     strip_comment(line);
 }
 
-Command_Props *command_type(void)
+Command_Props *command_type()
 {
+    int no_of_cmds = split_line(current_line, tokens);
 
     if (current_line != NULL && *current_line != '\0')
 
     {
-        Command_Props *cmd = cmd_type(current_line);
+        Command_Props *cmd = cmd_type(tokens[0]);
+        if (cmd->type != INVALID_TYPE && no_of_cmds > 1)
+        {
+            cmd->arg1 = tokens[1];
+            cmd->arg2 = tokens[2];
+        }
         return cmd;
     }
+    return NULL;
 }
 
+int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
+{
+    int count = 0;
+    const char *start = line;
+
+    while (*start && count < MAX_TOKENS)
+    {
+        while (*start && isspace((unsigned char)*start))
+            start++; // skip spaces
+
+        if (*start == '\0')
+            break;
+
+        const char *end = start;
+        while (*end && !isspace((unsigned char)*end))
+            end++; // find end of token
+
+        size_t len = end - start;
+        if (len >= MAX_TOKEN_LENGTH)
+            len = MAX_TOKEN_LENGTH - 1;
+
+        strncpy(tokens[count], start, len);
+        tokens[count][len] = '\0'; // null-terminate
+        count++;
+
+        start = end;
+    }
+
+    return count;
+}
 static Command_Props *cmd_type(const char *line)
 {
+
     static Command_Props cmd_props;
-    const char *arithmetic_cmds[] = {
+    const char *arithmetic_logical_cmds[] = {
         "add",
         "sub",
         "neg",
@@ -113,53 +156,62 @@ static Command_Props *cmd_type(const char *line)
         "and",
         "or",
         "not",
+        "pop",
+        "push",
     };
 
-    size_t len = sizeof(arithmetic_cmds) / sizeof(arithmetic_cmds[0]);
+    size_t len = sizeof(arithmetic_logical_cmds) / sizeof(arithmetic_logical_cmds[0]);
 
     for (int i = 0; i < len; i++)
     {
-        if (strcmp(line, arithmetic_cmds[i]) == 0)
+        if (strcmp(line, arithmetic_logical_cmds[i]) == 0)
         {
-            cmd_props.type = C_ARITHMETIC;
-            cmd_props.type_string = arithmetic_cmds[i];
+            if (arithmetic_logical_cmds[i] != "push" && arithmetic_logical_cmds[i] != "pop")
+            {
+                cmd_props.type = C_ARITHMETIC;
+            }
+            else if (arithmetic_logical_cmds[i] == "push")
+            {
+                cmd_props.type = C_PUSH;
+            }
+            else if (arithmetic_logical_cmds[i] == "pop")
+            {
+                cmd_props.type = C_POP;
+            }
+            cmd_props.cmd = arithmetic_logical_cmds[i];
+            cmd_props.arg1 = NULL;
+            cmd_props.arg2 = NULL;
             return &cmd_props;
         }
     }
     cmd_props.type = INVALID_TYPE;
-    cmd_props.type_string = "INVALID";
+    cmd_props.cmd = "INVALID";
+    cmd_props.arg1 = NULL;
+    cmd_props.arg2 = NULL;
     return &cmd_props;
 }
 
 char *arg1(void) // check for NULL when function is called: char *result = arg1(); if (result != NULL) ...
 {
-    Command_Props *cmd = command_type();
-    if (cmd->type == C_RETURN)
+    Command_Props *command = command_type();
+    if (command->type == C_RETURN)
         return NULL;
-    switch (cmd->type)
+    switch (command->type)
     {
     case C_ARITHMETIC:
-        return cmd->type_string;
+        return command->cmd;
+
+    case C_PUSH:
+    case C_POP:
+        return command->arg1;
 
     default:
         break;
     }
 }
-int arg2(void)
+
+int arg2(void) // this function will be called only if the current command is a c_push, c_pop, c_function, c_call
 {
     Command_Props *cmd = command_type();
-    // if its a push/pop operation parse the command from command props and return the second argument
-    // switch (cmd->type)
-    // {
-    // case C_PUSH:
-    //     break;
-    // case C_POP:
-    //     break;
-    // case C_FUNCTION:
-    //     break;
-    // case C_CALL:
-    //     break;
-    // default:
-    //     break;
-    // }
+    return cmd->arg2;
 }

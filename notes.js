@@ -101,8 +101,16 @@
  * @computed
  * M = D
  *
+ * push constant x
+ *
+ * arg 1 => constant
+ * arg 2 => x
  *
  *
+ * push constant 10 C_PUSH
+ * push argument 2  C_PUSH
+ * add C_ARITHMETIC
+ * pop local 3 C_POP
  *
  *
  */
