@@ -1,0 +1,99 @@
+# --- Build Artifacts ---
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.obj
+*.ilk
+*.pdb
+*.lib
+*.exp
+*.i
+*.s
+
+# --- Debug Symbols ---
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# --- IDE/Editor Files ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+
+# --- Project Files ---
+*.project
+*.cproject
+*.settings/
+*.sublime-workspace
+
+# --- Dependency Folders ---
+deps/
+build/
+bin/
+dist/
+out/
+Debug/
+Release/
+
+# --- macOS Specific ---
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# --- Windows Specific ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Compiled Libraries ---
+*.la
+*.lo
+*.loT
+
+# --- Autotools ---
+autom4te.cache/
+aclocal.m4
+compile
+config.guess
+config.h
+config.h.in
+config.log
+config.status
+config.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+missing
+stamp-h1
+
+# --- CMake ---
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+Makefile
+*.cmake
+
+# --- Git ---
+*.orig
+*.rej
+
+# --- Environment Files ---
+.env
+*.env
+secrets.ini
+credentials.*

@@ -3,6 +3,10 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#define MAX_LINE_LENGTH 256
+#define MAX_TOKENS 10
+#define MAX_TOKEN_LENGTH 64
+
 typedef struct cmd_props Command_Props;
 
 typedef enum commandType

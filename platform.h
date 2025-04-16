@@ -1,7 +1,7 @@
+#include <stdio.h>
+
 #ifndef PLATFORM_H
 #define PLATFORM_H
-
-typedef struct _IO_FILE FILE;
 
 void platfrom_create(FILE *file);
 void write_arithmetic(const char *command);

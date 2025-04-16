@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug C Program",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${fileDirname}/${fileBasenameNoExtension}",
+      "cwd": "${workspaceFolder}",  // ← Add this line
+      "args": [],
+      "stopAtEntry": false,
+      "MIMode": "lldb" , // or "gdb"
+      "preLaunchTask": "Build C Program"
+    }
+
+  ]
+}

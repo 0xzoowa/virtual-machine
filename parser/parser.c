@@ -9,12 +9,18 @@
 #define MAX_TOKENS 10
 #define MAX_TOKEN_LENGTH 64
 
+static void strip_comment(char *line);
+static void trim(char *line);
+static void strip(char *line);
+int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH]);
+static Command_Props *cmd_type(const char *line);
+
 typedef struct cmd_props
 {
     Command type;
-    const char *cmd;
-    const char *arg1;
-    const char *arg2;
+    char *cmd;
+    char *arg1;
+    int arg2;
 
 } Command_Props;
 
@@ -94,21 +100,25 @@ static void strip(char *line)
     strip_comment(line);
 }
 
-Command_Props *command_type()
+Command_Props *command_type() // analyse default values for structs and arrays
 {
     int no_of_cmds = split_line(current_line, tokens);
 
-    if (current_line != NULL && *current_line != '\0')
+    if (*current_line != '\0')
 
     {
         Command_Props *cmd = cmd_type(tokens[0]);
-        if (cmd->type != INVALID_TYPE && no_of_cmds > 1)
+        if (cmd->type != INVALID_TYPE || cmd->type != C_ARITHMETIC)
         {
-            cmd->arg1 = tokens[1];
-            cmd->arg2 = tokens[2];
+            if (no_of_cmds >= 3)
+            {
+                cmd->arg1 = tokens[1];
+                cmd->arg2 = atoi(tokens[2]);
+            }
         }
         return cmd;
     }
+
     return NULL;
 }
 
@@ -146,7 +156,7 @@ static Command_Props *cmd_type(const char *line)
 {
 
     static Command_Props cmd_props;
-    const char *arithmetic_logical_cmds[] = {
+    char *arithmetic_logical_cmds[] = {
         "add",
         "sub",
         "neg",
@@ -166,36 +176,35 @@ static Command_Props *cmd_type(const char *line)
     {
         if (strcmp(line, arithmetic_logical_cmds[i]) == 0)
         {
-            if (arithmetic_logical_cmds[i] != "push" && arithmetic_logical_cmds[i] != "pop")
+            if (strcmp(arithmetic_logical_cmds[i], "push") != 0 || strcmp(arithmetic_logical_cmds[i], "pop") != 0)
             {
                 cmd_props.type = C_ARITHMETIC;
             }
-            else if (arithmetic_logical_cmds[i] == "push")
+
+            else if (strcmp(arithmetic_logical_cmds[i], "push") == 0)
             {
                 cmd_props.type = C_PUSH;
             }
-            else if (arithmetic_logical_cmds[i] == "pop")
+            else if (strcmp(arithmetic_logical_cmds[i], "pop") == 0)
             {
                 cmd_props.type = C_POP;
             }
             cmd_props.cmd = arithmetic_logical_cmds[i];
-            cmd_props.arg1 = NULL;
-            cmd_props.arg2 = NULL;
+
             return &cmd_props;
         }
     }
     cmd_props.type = INVALID_TYPE;
     cmd_props.cmd = "INVALID";
-    cmd_props.arg1 = NULL;
-    cmd_props.arg2 = NULL;
+
     return &cmd_props;
 }
 
-char *arg1(void) // check for NULL when function is called: char *result = arg1(); if (result != NULL) ...
+char *arg1() // check for NULL when function is called: char *result = arg1(); if (result != NULL) ...
 {
     Command_Props *command = command_type();
     if (command->type == C_RETURN)
-        return NULL;
+        return NULL; // might be unneccessary; make the check from the client instead
     switch (command->type)
     {
     case C_ARITHMETIC:
@@ -206,7 +215,7 @@ char *arg1(void) // check for NULL when function is called: char *result = arg1(
         return command->arg1;
 
     default:
-        break;
+        return command->cmd;
     }
 }
 
