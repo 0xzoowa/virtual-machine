@@ -107,10 +107,14 @@
  * arg 2 => x
  *
  *
- * push constant 10 C_PUSH
- * push argument 2  C_PUSH
- * add C_ARITHMETIC
- * pop local 3 C_POP
+ * Next, handle the segments local, argument, this, and that;
+ * this -> current object
+ * that -> current array
+ *
+ * push local 2
+ * pop local 2
+ *
+ * local base address + offset(index)
  *
  *
  */

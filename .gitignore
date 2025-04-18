@@ -13,6 +13,7 @@
 *.exp
 *.i
 *.s
+*.js
 
 # --- Debug Symbols ---
 *.dSYM/

@@ -18,9 +18,9 @@ static Command_Props *cmd_type(const char *line);
 typedef struct cmd_props
 {
     Command type;
-    char *cmd;
-    char *arg1;
-    int arg2;
+    char *cmd;  // command type
+    char *arg1; // segment
+    int arg2;   // non negative integer
 
 } Command_Props;
 
@@ -37,8 +37,6 @@ void parser_create(char *filename)
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
         exit(EXIT_FAILURE);
     }
-
-    // continue the parsing process
 }
 
 bool has_more_lines()
@@ -102,12 +100,13 @@ static void strip(char *line)
 
 Command_Props *command_type() // analyse default values for structs and arrays
 {
+    Command_Props *cmd = NULL;
     int no_of_cmds = split_line(current_line, tokens);
 
-    if (*current_line != '\0')
+    if (*current_line != '\0' && no_of_cmds > 0)
 
     {
-        Command_Props *cmd = cmd_type(tokens[0]);
+        cmd = cmd_type(tokens[0]);
         if (cmd->type != INVALID_TYPE || cmd->type != C_ARITHMETIC)
         {
             if (no_of_cmds >= 3)
@@ -119,10 +118,10 @@ Command_Props *command_type() // analyse default values for structs and arrays
         return cmd;
     }
 
-    return NULL;
+    return cmd;
 }
 
-int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
+static int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
 {
     int count = 0;
     const char *start = line;
@@ -200,11 +199,12 @@ static Command_Props *cmd_type(const char *line)
     return &cmd_props;
 }
 
-char *arg1() // check for NULL when function is called: char *result = arg1(); if (result != NULL) ...
+char *arg1()
+// check for default type(INVALID_TYPE) when function is called: char *result = arg1(); if (result != INVALID_TYPE) ...
+// should not be called if the type of the current command is a c_return
+
 {
     Command_Props *command = command_type();
-    if (command->type == C_RETURN)
-        return NULL; // might be unneccessary; make the check from the client instead
     switch (command->type)
     {
     case C_ARITHMETIC:
@@ -219,7 +219,8 @@ char *arg1() // check for NULL when function is called: char *result = arg1(); i
     }
 }
 
-int arg2(void) // this function will be called only if the current command is a c_push, c_pop, c_function, c_call
+int arg2()
+// this function will be called only if the current command is a c_push, c_pop, c_function, c_call
 {
     Command_Props *cmd = command_type();
     return cmd->arg2;
