@@ -4,10 +4,7 @@
 #include "hack.h"
 #include "../parser/parser.h"
 
-static int compute_address(char *, int);
-
 static FILE *output_file = NULL;
-
 void platform_create(char *filename)
 {
 
@@ -26,29 +23,6 @@ void platform_destroy()
         fclose(output_file);
         output_file = NULL;
     }
-}
-
-static int compute_address(char *segment, int offset)
-{
-    int address = 0;
-
-    if (strcmp(segment, "local") == 0)
-
-        address = LCL + offset;
-
-    else if (strcmp(segment, "argument") == 0)
-
-        address = ARG + offset;
-
-    else if (strcmp(segment, "this") == 0)
-
-        address = THIS + offset;
-
-    else if (strcmp(segment, "that") == 0)
-
-        address = THAT + offset;
-
-    return address;
 }
 
 void write_arithmetic(const char *command)
@@ -126,5 +100,15 @@ void write_arithmetic(const char *command)
                 "(CONTINUE%d)\n"
                 "@SP\nM=M+1\n",
                 id, jump, id, id, id);
+    }
+}
+
+void write_push_pop(Command command, const char *segment, int index)
+{
+
+    char *arg1 = get_current_arg1();
+    // push constant x => [push->cmdstr ,constant->arg1, x->arg2] C_PUSH->type
+    if (strcmp(arg1, "constant") == 0)
+    {
     }
 }
