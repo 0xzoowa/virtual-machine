@@ -110,10 +110,6 @@ void write_arithmetic(const char *command) // command_props->cmdstr: argument
 
 void write_push_pop(Command command, const char *segment, int index)
 {
-    /**
-     * push constant x => [push(cmdstr) ,constant(segment), x(index)] C_PUSH->type(command)
-     * command_props->type(command), command_props->arg1(segment), command_props->arg2(index)
-     */
     switch (command)
     {
     case C_PUSH:
@@ -127,18 +123,110 @@ void write_push_pop(Command command, const char *segment, int index)
                                  "@SP\n"
                                  "M = M + 1\n",
                     index);
+            return;
         }
+        else if (strcmp(segment, "pointer") == 0)
+        {
+            if (index == 0)
+            {
+                // push value of this into stack
+                fprintf(output_file, "@THIS"
+                                     "A=M"
+                                     "D=M"
+                                     "@SP"
+                                     "A=M"
+                                     "M=D"
+                                     "@SP"
+                                     "M = M + 1");
+            }
+            else if (index == 1)
+            {
+                // push value of that into the stack
+                fprintf(output_file, "@THAT"
+                                     "A=M"
+                                     "D=M"
+                                     "@SP"
+                                     "A=M"
+                                     "M=D"
+                                     "@SP"
+                                     "M = M + 1");
+            }
+            else
+            {
+                fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
+            }
+
+            return;
+        }
+        else if (strcmp(segment, "temp") == 0)
+        {
+            if (index < 0 || index > 7)
+            {
+                fprintf(stderr, "Error: temp index %d out of range (0-7)\n", index);
+                return;
+            }
+            fprintf(output_file, "@%d\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", 5 + index);
+            return;
+        }
+
         else
         {
             hack_push(index, segment);
+            return;
         }
-        break;
 
     case C_POP:
-        hack_pop(index, segment);
-        break;
+
+        if (strcmp(segment, "pointer") == 0)
+        {
+
+            if (index == 0)
+            {
+
+                // pop value from stack into this
+                fprintf(output_file, "@SP"
+                                     "AM=M-1"
+                                     "D=M"
+                                     "@THIS"
+                                     "A=M"
+                                     "M=D");
+            }
+            else if (index == 1)
+            {
+                // pop value from stack into this
+                fprintf(output_file, "@SP"
+                                     "AM=M-1"
+                                     "D=M"
+                                     "@THAT"
+                                     "A=M"
+                                     "M=D");
+            }
+            else
+            {
+                fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
+            }
+            return;
+        }
+
+        else if (strcmp(segment, "temp") == 0)
+        {
+            if (index < 0 || index > 7)
+            {
+                fprintf(stderr, "Error: temp index %d out of range (0-7)\n", index);
+                return;
+            }
+
+            fprintf(output_file, "@SP\nAM=M-1\nD=M\n@%d\nM=D\n", 5 + index);
+            return;
+        }
+        else
+        {
+            hack_pop(index, segment);
+            return;
+        }
 
     default:
+        fprintf(stderr, "Error: Unknown command type\n");
         break;
     }
 }
