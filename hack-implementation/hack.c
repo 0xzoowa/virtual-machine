@@ -5,14 +5,19 @@
 #include "../parser/parser.h"
 
 static FILE *output_file = NULL;
+
+static char *get_code(char *);
+static void hack_push(int, const char *);
+static void hack_pop(int, const char *);
+
 void platform_create(char *filename)
 {
 
     output_file = fopen(filename, "a");
     if (output_file == NULL)
     {
-        perror("Error opening/creating output file");
-        return;
+        fprintf(stderr, "Error: Could not create output file %s\n", filename);
+        exit(EXIT_FAILURE); // perror vs printing to stderr?
     }
 }
 
@@ -25,7 +30,7 @@ void platform_destroy()
     }
 }
 
-void write_arithmetic(const char *command)
+void write_arithmetic(const char *command) // command_props->cmdstr: argument
 {
     static int label_counter = 0; // for generating unique labels
 
@@ -105,10 +110,108 @@ void write_arithmetic(const char *command)
 
 void write_push_pop(Command command, const char *segment, int index)
 {
-
-    char *arg1 = get_current_arg1();
-    // push constant x => [push->cmdstr ,constant->arg1, x->arg2] C_PUSH->type
-    if (strcmp(arg1, "constant") == 0)
+    /**
+     * push constant x => [push(cmdstr) ,constant(segment), x(index)] C_PUSH->type(command)
+     * command_props->type(command), command_props->arg1(segment), command_props->arg2(index)
+     */
+    switch (command)
     {
+    case C_PUSH:
+        if (strcmp(segment, "constant") == 0)
+        {
+            fprintf(output_file, "@%d\n"
+                                 "D = A\n"
+                                 "@SP\n"
+                                 "A = M\n"
+                                 "M = D\n"
+                                 "@SP\n"
+                                 "M = M + 1\n",
+                    index);
+        }
+        else
+        {
+            hack_push(index, segment);
+        }
+        break;
+
+    case C_POP:
+        hack_pop(index, segment);
+        break;
+
+    default:
+        break;
     }
+}
+static void hack_push(int index, const char *segment)
+{
+    char *code = get_code(segment);
+    if (code == NULL)
+    {
+        fprintf(stderr, "ERROR GETTING SEGMENT CODE");
+        return;
+    }
+    fprintf(output_file, " @%d\n"
+                         "D = A\n"
+                         "@%s\n"
+                         "A = M + D\n"
+                         "D = M\n"
+                         "@SP\n"
+                         "A = M\n"
+                         "M = D\n"
+                         "@SP\n"
+                         "M = M + 1\n",
+            index, code);
+}
+static void hack_pop(int index, const char *segment)
+{
+    char *code = get_code(segment);
+    if (code == NULL)
+    {
+        fprintf(stderr, "ERROR GETTING SEGMENT CODE");
+        return;
+    }
+
+    fprintf(output_file,
+            "@SP\n"
+            "AM=M-1\n"
+            "D=M\n"
+            "@R13\n"
+            "M=D\n"
+            "@%d\n"
+            "D=A\n"
+            "@%s\n"
+            "D=M+D\n"
+            "@R14\n"
+            "M=D\n"
+            "@R13\n"
+            "D=M\n"
+            "@R14\n"
+            "A=M\n"
+            "M=D\n",
+            index, code);
+}
+
+static char *get_code(char *segment)
+{
+    char *code;
+    if (strcmp(segment, "local") == 0)
+    {
+        code = "LCL";
+    }
+    else if (strcmp(segment, "argument") == 0)
+    {
+        code = "ARG";
+    }
+    else if (strcmp(segment, "this") == 0)
+    {
+        code = "THIS";
+    }
+    else if (strcmp(segment, "that") == 0)
+    {
+        code = "THAT";
+    }
+    else
+        code = NULL;
+
+    return code;
 }

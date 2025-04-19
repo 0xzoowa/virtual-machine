@@ -117,4 +117,173 @@
  * local base address + offset(index)
  *
  *
+ *
+ */
+/**
+ * 
+ * 
+ *     switch (command)
+    {
+    case C_PUSH:
+        if (strcmp(segment, "constant") == 0)
+        {
+
+            fprintf(output_file, "@%d\n"
+                                 "D = A\n"
+                                 "@SP\n"
+                                 "A = M\n"
+                                 "M = D\n"
+                                 "@SP\n"
+                                 "M = M + 1\n",
+                    index);
+            return;
+        }
+        else if (strcmp(segment, "local") == 0)
+        {
+            fprintf(output_file, " @%d\n"
+                                 "D = A\n"
+                                 "@LCL\n"
+                                 "A = M + D\n" // base + i
+                                 "D = M\n"
+                                 "@SP\n"
+                                 "A = M\n"
+                                 "M = D\n"
+                                 "@SP\n"
+                                 "M = M + 1\n",
+                    index);
+        }
+        else if (strcmp(segment, "argument") == 0)
+        {
+            fprintf(output_file, " @%d\n"
+                                 "D = A\n"
+                                 "@ARG\n"
+                                 "A = M + D\n"
+                                 "D = M\n"
+                                 "@SP\n"
+                                 "A = M\n"
+                                 "M = D\n"
+                                 "@SP\n"
+                                 "M = M + 1\n",
+                    index);
+        }
+        else if (strcmp(segment, "this") == 0)
+        {
+            fprintf(output_file, " @%d\n"
+                                 "D = A\n"
+                                 "@THIS\n"
+                                 "A = M + D\n"
+                                 "D = M\n"
+                                 "@SP\n"
+                                 "A = M\n"
+                                 "M = D\n"
+                                 "@SP\n"
+                                 "M = M + 1\n",
+                    index);
+        }
+        else if (strcmp(segment, "that") == 0)
+        {
+            fprintf(output_file, " @%d\n"
+                                 "D = A\n"
+                                 "@THAT\n"
+                                 "A = M + D\n"
+                                 "D = M\n"
+                                 "@SP\n"
+                                 "A = M\n"
+                                 "M = D\n"
+                                 "@SP\n"
+                                 "M = M + 1\n",
+                    index);
+        }
+        break;
+
+    case C_POP:
+        if (strcmp(segment, "local") == 0)
+        {
+            fprintf(output_file,
+                    "@SP\n"
+                    "AM=M-1\n"
+                    "D=M\n"
+                    "@R13\n"
+                    "M=D\n" // Save value
+                    "@%d\n"
+                    "D=A\n"
+                    "@LCL\n"
+                    "D=M+D\n" // ARG + 3
+                    "@R14\n"
+                    "M=D\n" // Save address
+                    "@R13\n"
+                    "D=M\n" // Restore value
+                    "@R14\n"
+                    "A=M\n"
+                    "M=D\n",
+                    index); // *argument[3] = value
+        }
+        else if (strcmp(segment, "argument") == 0)
+        {
+            fprintf(output_file,
+                    "@SP\n"
+                    "AM=M-1\n"
+                    "D=M\n"
+                    "@R13\n"
+                    "M=D\n"
+                    "@%d\n"
+                    "D=A\n"
+                    "@ARG\n"
+                    "D=M+D\n"
+                    "@R14\n"
+                    "M=D\n"
+                    "@R13\n"
+                    "D=M\n"
+                    "@R14\n"
+                    "A=M\n"
+                    "M=D\n",
+                    index);
+        }
+        else if (strcmp(segment, "this") == 0)
+        {
+            fprintf(output_file,
+                    "@SP\n"
+                    "AM=M-1\n"
+                    "D=M\n"
+                    "@R13\n"
+                    "M=D\n"
+                    "@%d\n"
+                    "D=A\n"
+                    "@THIS\n"
+                    "D=M+D\n"
+                    "@R14\n"
+                    "M=D\n"
+                    "@R13\n"
+                    "D=M\n"
+                    "@R14\n"
+                    "A=M\n"
+                    "M=D\n",
+                    index);
+        }
+        else if (strcmp(segment, "that") == 0)
+        {
+            fprintf(output_file,
+                    "@SP\n"
+                    "AM=M-1\n"
+                    "D=M\n"
+                    "@R13\n"
+                    "M=D\n"
+                    "@%d\n"
+                    "D=A\n"
+                    "@THAT\n"
+                    "D=M+D\n"
+                    "@R14\n"
+                    "M=D\n"
+                    "@R13\n"
+                    "D=M\n"
+                    "@R14\n"
+                    "A=M\n"
+                    "M=D\n",
+                    index);
+        }
+        break;
+
+    default:
+        break;
+    }
  */

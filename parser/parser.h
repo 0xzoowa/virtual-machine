@@ -36,6 +36,5 @@ Command_Props *command_type(void);
 char *arg1(void);
 int arg2(void);
 void parser_destroy(void);
-Command_Props *get_current_command(void);
 
 #endif

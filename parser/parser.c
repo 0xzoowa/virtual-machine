@@ -13,7 +13,7 @@ static void strip_comment(char *line);
 static void trim(char *line);
 static void strip(char *line);
 int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH]);
-static Command_Props *cmd_type(const char *line);
+static void cmd_type(const char *line);
 
 typedef struct cmd_props
 {
@@ -27,7 +27,7 @@ typedef struct cmd_props
 static FILE *input = NULL;
 static char current_line[MAX_LINE_LENGTH];
 static char tokens[MAX_TOKENS][MAX_TOKEN_LENGTH];
-static Command_Props *cmd = NULL;
+extern Command_Props *cmd = NULL; // make static. use accessor to access specific properties from client
 
 void parser_create(char *filename)
 {
@@ -114,7 +114,7 @@ static void strip(char *line)
     strip_comment(line);
 }
 
-void command_type() // analyse default values for structs and arrays
+Command_Props *command_type() // analyse default values for structs and arrays
 {
     int no_of_cmds = 0;
     if (*current_line != '\0')
@@ -122,7 +122,7 @@ void command_type() // analyse default values for structs and arrays
 
     if (no_of_cmds > 0)
     {
-        cmd = cmd_type(tokens[0]);
+        cmd_type(tokens[0]);
         if (cmd->type != INVALID_TYPE && cmd->type != C_ARITHMETIC)
         {
             if (no_of_cmds >= 3)
@@ -130,8 +130,11 @@ void command_type() // analyse default values for structs and arrays
                 cmd->arg1 = strdup(tokens[1]);
                 cmd->arg2 = atoi(tokens[2]);
             }
+            return cmd;
         }
+        return cmd;
     }
+    return NULL;
 }
 
 static int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
@@ -165,7 +168,7 @@ static int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
     return count;
 }
 
-static Command_Props *cmd_type(const char *line)
+static void cmd_type(const char *line)
 {
     char *arithmetic_logical_cmds[] = {
         "add",
@@ -199,13 +202,13 @@ static Command_Props *cmd_type(const char *line)
             {
                 cmd->type = C_ARITHMETIC;
             }
-            cmd->cmdstr = strdup(line); // Make a copy
-            return cmd;
+            cmd->cmdstr = strdup(arithmetic_logical_cmds[i]);
+            return;
         }
     }
     cmd->type = INVALID_TYPE;
-    cmd->cmdstr = strdup("INVALID");
-    return cmd;
+    cmd->cmdstr = strdup("invalid");
+    return;
 }
 
 char *arg1()
