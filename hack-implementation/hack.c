@@ -4,11 +4,16 @@
 #include "hack.h"
 #include "../parser/parser.h"
 
+#define MAX_CHAR 256
+
 static FILE *output_file = NULL;
+static char *basename = NULL;
+static char *static_segment[MAX_CHAR];
 
 static char *get_code(char *);
 static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
+static char *get_filename_without_extension(const char *filename);
 
 void platform_create(char *filename)
 {
@@ -17,7 +22,15 @@ void platform_create(char *filename)
     if (output_file == NULL)
     {
         fprintf(stderr, "Error: Could not create output file %s\n", filename);
-        exit(EXIT_FAILURE); // perror vs printing to stderr?
+        exit(EXIT_FAILURE);
+    }
+    basename = get_filename_without_extension(filename);
+    if (!basename)
+    {
+        fclose(output_file);
+        output_file = NULL;
+        fprintf(stderr, "Error: Could not extract basename from output file %s\n", filename);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -27,6 +40,11 @@ void platform_destroy()
     {
         fclose(output_file);
         output_file = NULL;
+    }
+    if (basename != NULL)
+    {
+        free(basename);
+        basename = NULL;
     }
 }
 
@@ -168,6 +186,25 @@ void write_push_pop(Command command, const char *segment, int index)
             fprintf(output_file, "@%d\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", 5 + index);
             return;
         }
+        else if (strcmp(segment, "static") == 0)
+        {
+            if (index < 0 || index > 239)
+            {
+                fprintf(stderr, "Error: static index %d out of range (0-239)\n", index);
+                return;
+            }
+
+            snprintf(static_segment, sizeof(static_segment), "%s.%d", basename, index);
+            fprintf(output_file, "@%s\n"
+                                 "D=M\n"
+                                 "@SP\n"
+                                 "A=M\n"
+                                 "M=D\n"
+                                 "@SP\n"
+                                 "M=M+1",
+                    static_segment);
+            return;
+        }
 
         else
         {
@@ -217,6 +254,24 @@ void write_push_pop(Command command, const char *segment, int index)
             }
 
             fprintf(output_file, "@SP\nAM=M-1\nD=M\n@%d\nM=D\n", 5 + index);
+            return;
+        }
+        else if (strcmp(segment, "static") == 0)
+        {
+            if (index < 0 || index > 239)
+            {
+                fprintf(stderr, "Error: static index %d out of range (0-239)\n", index);
+                return;
+            }
+
+            snprintf(static_segment, sizeof(static_segment), "%s.%d", basename, index);
+            fprintf(output_file, "@SP\n"
+                                 "AM=M-1\n"
+                                 "D=M\n"
+                                 "@%s\n"
+                                 "M=D\n",
+
+                    static_segment);
             return;
         }
         else
@@ -302,4 +357,31 @@ static char *get_code(char *segment)
         code = NULL;
 
     return code;
+}
+
+static char *get_filename_without_extension(const char *filename)
+{
+
+    const char *dot = strrchr(filename, '.');
+
+    const char *slash = strrchr(filename, '/'); // unix
+    if (!slash)
+    {
+        slash = strrchr(filename, '\\'); // windows
+    }
+
+    if (!dot || (dot < slash))
+    {
+        return NULL;
+    }
+
+    size_t len = dot - filename; // dot index - filename index
+    char *result = (char *)malloc(len + 1);
+    if (result)
+    {
+        strncpy(result, filename, len);
+        result[len] = '\0';
+    }
+
+    return result;
 }
