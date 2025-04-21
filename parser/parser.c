@@ -12,22 +12,22 @@
 static void strip_comment(char *line);
 static void trim(char *line);
 static void strip(char *line);
-int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH]);
+static int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH]);
 static void cmd_type(const char *line);
 
 typedef struct cmd_props
 {
     Command type;
-    char *cmdstr; // command type
-    char *arg1;   // segment
-    int arg2;     // non negative integer
+    const char *cmdstr; // command type
+    const char *arg1;   // segment
+    int arg2;           // non negative integer
 
 } Command_Props;
 
 static FILE *input = NULL;
 static char current_line[MAX_LINE_LENGTH];
 static char tokens[MAX_TOKENS][MAX_TOKEN_LENGTH];
-extern Command_Props *cmd = NULL; // make static. use accessor to access specific properties from client
+Command_Props *cmd = NULL; // make static. use accessor to access specific properties from client
 
 void parser_create(char *filename)
 {
@@ -45,6 +45,7 @@ void parser_create(char *filename)
         free(cmd);
         cmd = NULL;
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
+        perror("Error: Cannot open file");
         exit(EXIT_FAILURE);
     }
 }
@@ -59,14 +60,12 @@ bool has_more_lines()
     return true;
 }
 
-void advance() // check if current_line is empty whenever you call advance
+void advance(FILE *f) // check if current_line is empty whenever you call advance
 {
-    if (has_more_lines())
-    {
-        fgets(current_line, MAX_LINE_LENGTH, input);
-        // strip comments and white spaces
-        strip(current_line); // should return an empty string ('\0') is string/line contains only whitespace and comment
-    }
+    fgets(current_line, MAX_LINE_LENGTH, input);
+    // strip comments and white spaces
+    strip(current_line); // should return an empty string ('\0') if string/line contains only whitespace and comment
+    fprintf(f, "%s\n", current_line);
 }
 
 void parser_destroy()
@@ -79,9 +78,8 @@ void parser_destroy()
     }
     if (cmd)
     {
-        free(cmd->cmdstr);
-        free(cmd->arg1);
         free(cmd);
+        cmd = NULL;
     }
 }
 static void strip_comment(char *line)
@@ -127,7 +125,7 @@ Command_Props *command_type() // analyse default values for structs and arrays
         {
             if (no_of_cmds >= 3)
             {
-                cmd->arg1 = strdup(tokens[1]);
+                cmd->arg1 = tokens[1];
                 cmd->arg2 = atoi(tokens[2]);
             }
             return cmd;
@@ -186,7 +184,7 @@ static void cmd_type(const char *line)
 
     size_t len = sizeof(arithmetic_logical_cmds) / sizeof(arithmetic_logical_cmds[0]);
 
-    for (int i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++)
     {
         if (strcmp(line, arithmetic_logical_cmds[i]) == 0)
         {
@@ -202,16 +200,16 @@ static void cmd_type(const char *line)
             {
                 cmd->type = C_ARITHMETIC;
             }
-            cmd->cmdstr = strdup(arithmetic_logical_cmds[i]);
+            cmd->cmdstr = arithmetic_logical_cmds[i];
             return;
         }
     }
     cmd->type = INVALID_TYPE;
-    cmd->cmdstr = strdup("invalid");
+    cmd->cmdstr = "invalid";
     return;
 }
 
-char *arg1()
+const char *arg1()
 // check for default type(INVALID_TYPE) when function is called: char *result = arg1(); if (result != INVALID_TYPE) ...
 // should not be called if the type of the current command is a c_return
 

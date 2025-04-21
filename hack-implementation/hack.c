@@ -6,14 +6,14 @@
 
 #define MAX_CHAR 256
 
-static FILE *output_file = NULL;
-static char *basename = NULL;
-static char *static_segment[MAX_CHAR];
-
-static char *get_code(char *);
+static char *get_code(const char *);
 static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
 static char *get_filename_without_extension(const char *filename);
+
+static FILE *output_file = NULL;
+static char *basename = NULL;
+static char static_segment[MAX_CHAR];
 
 void platform_create(char *filename)
 {
@@ -334,7 +334,7 @@ static void hack_pop(int index, const char *segment)
             index, code);
 }
 
-static char *get_code(char *segment)
+static char *get_code(const char *segment)
 {
     char *code;
     if (strcmp(segment, "local") == 0)
@@ -361,6 +361,7 @@ static char *get_code(char *segment)
 
 static char *get_filename_without_extension(const char *filename)
 {
+    char *result;
 
     const char *dot = strrchr(filename, '.');
 
@@ -370,18 +371,19 @@ static char *get_filename_without_extension(const char *filename)
         slash = strrchr(filename, '\\'); // windows
     }
 
-    if (!dot || (dot < slash))
+    if (!dot || (slash && dot < slash))
     {
         return NULL;
     }
 
     size_t len = dot - filename; // dot index - filename index
-    char *result = (char *)malloc(len + 1);
+    result = (char *)malloc(len + 1);
     if (result)
     {
         strncpy(result, filename, len);
         result[len] = '\0';
-    }
 
-    return result;
+        return result;
+    }
+    return NULL;
 }
