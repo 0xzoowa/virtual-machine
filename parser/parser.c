@@ -27,9 +27,9 @@ typedef struct cmd_props
 static FILE *input = NULL;
 static char current_line[MAX_LINE_LENGTH];
 static char tokens[MAX_TOKENS][MAX_TOKEN_LENGTH];
-Command_Props *cmd = NULL; // make static. use accessor to access specific properties from client
+static Command_Props *cmd = NULL;
 
-void parser_create(char *filename)
+void parser_create(const char *filename)
 {
     cmd = malloc(sizeof(Command_Props));
     if (!cmd)
@@ -60,12 +60,11 @@ bool has_more_lines()
     return true;
 }
 
-void advance(FILE *f) // check if current_line is empty whenever you call advance
+void advance() // check if current_line is empty whenever you call advance
 {
     fgets(current_line, MAX_LINE_LENGTH, input);
     // strip comments and white spaces
     strip(current_line); // should return an empty string ('\0') if string/line contains only whitespace and comment
-    fprintf(f, "%s\n", current_line);
 }
 
 void parser_destroy()
@@ -231,9 +230,7 @@ const char *arg1()
 int arg2()
 // this function will be called only if the current command is a c_push, c_pop, c_function, c_call
 {
-    if (!cmd)
-        return -1; // Error value
-    return cmd->arg2;
+    return cmd ? cmd->arg2 : -1;
 }
 
 Command_Props *get_current_command()
@@ -255,5 +252,5 @@ const char *get_current_arg1(void)
 }
 int get_current_arg2(void)
 {
-    return cmd ? cmd->arg2 : -1;
+    return cmd ? cmd->arg2 : 0;
 }

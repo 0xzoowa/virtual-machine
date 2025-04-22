@@ -29,9 +29,9 @@ const char *get_current_cmdstr(void);
 const char *get_current_arg1(void);
 int get_current_arg2(void);
 
-void parser_create(char *file);
+void parser_create(const char *file);
 bool has_more_lines(void);
-void advance(FILE *f);
+void advance();
 Command_Props *command_type(void);
 const char *arg1(void);
 int arg2(void);

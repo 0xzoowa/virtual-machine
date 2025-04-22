@@ -1,22 +1,16 @@
-
 {
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build C Program",  // Must match `preLaunchTask` in launch.json
+      "label": "Build VMTranslator",  // Should match preLaunchTask in launch.json
       "type": "shell",
-      "command": "gcc",
-      "args": [
-        "-g", 
-        "${file}",                 // Compiles the currently open file
-        "-o", 
-        "${fileDirname}/${fileBasenameNoExtension}"  // Outputs executable
-      ],
+      "command": "make",
+      "args": [],
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": []         // Optional: Helps catch compile errors
+      "problemMatcher": []
     }
   ]
 }

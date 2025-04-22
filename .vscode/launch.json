@@ -2,16 +2,15 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug C Program",
+      "name": "Debug VMTranslator",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${fileDirname}/${fileBasenameNoExtension}",
-      "cwd": "${workspaceFolder}",  // ← Add this line
+      "program": "${workspaceFolder}/VMTranslator",
+      "cwd": "${workspaceFolder}",
       "args": [],
       "stopAtEntry": false,
-      "MIMode": "lldb" , // or "gdb"
-      "preLaunchTask": "Build C Program"
+      "MIMode": "lldb",  // Or "gdb" depending on your setup
+      "preLaunchTask": "Build VMTranslator"
     }
-
   ]
 }

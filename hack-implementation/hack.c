@@ -3,13 +3,11 @@
 #include <string.h>
 #include "hack.h"
 #include "../parser/parser.h"
-
-#define MAX_CHAR 256
+#include "../helper.h"
 
 static char *get_code(const char *);
 static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
-static char *get_filename_without_extension(const char *filename);
 
 static FILE *output_file = NULL;
 static char *basename = NULL;
@@ -18,7 +16,7 @@ static char static_segment[MAX_CHAR];
 void platform_create(char *filename)
 {
 
-    output_file = fopen(filename, "a");
+    output_file = fopen(filename, "w");
     if (output_file == NULL)
     {
         fprintf(stderr, "Error: Could not create output file %s\n", filename);
@@ -50,7 +48,12 @@ void platform_destroy()
 
 void write_arithmetic(const char *command) // command_props->cmdstr: argument
 {
-    static int label_counter = 0; // for generating unique labels
+    if (command == NULL)
+    {
+        fprintf(stderr, "Invalid command");
+        exit(EXIT_FAILURE);
+    }
+    int label_counter = 0; // for generating unique labels
 
     // Unary operations
     if (strcmp(command, "neg") == 0 || strcmp(command, "not") == 0) // pop y
@@ -123,11 +126,27 @@ void write_arithmetic(const char *command) // command_props->cmdstr: argument
                 "(CONTINUE%d)\n"
                 "@SP\nM=M+1\n",
                 id, jump, id, id, id);
+        return;
     }
+    return;
 }
 
 void write_push_pop(Command command, const char *segment, int index)
 {
+    // Check if segment is NULL or empty
+    if (!segment || segment[0] == '\0')
+    {
+        fprintf(stderr, "Segment cannot be NULL or empty\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Check if index is negative
+    if (index < 0)
+    {
+        fprintf(stderr, "Index cannot be negative\n");
+        exit(EXIT_FAILURE);
+    }
+
     switch (command)
     {
     case C_PUSH:
@@ -281,7 +300,7 @@ void write_push_pop(Command command, const char *segment, int index)
         }
 
     default:
-        fprintf(stderr, "Error: Unknown command type\n");
+        fprintf(stderr, "Error: Invalid command type\n");
         break;
     }
 }
@@ -357,33 +376,4 @@ static char *get_code(const char *segment)
         code = NULL;
 
     return code;
-}
-
-static char *get_filename_without_extension(const char *filename)
-{
-    char *result;
-
-    const char *dot = strrchr(filename, '.');
-
-    const char *slash = strrchr(filename, '/'); // unix
-    if (!slash)
-    {
-        slash = strrchr(filename, '\\'); // windows
-    }
-
-    if (!dot || (slash && dot < slash))
-    {
-        return NULL;
-    }
-
-    size_t len = dot - filename; // dot index - filename index
-    result = (char *)malloc(len + 1);
-    if (result)
-    {
-        strncpy(result, filename, len);
-        result[len] = '\0';
-
-        return result;
-    }
-    return NULL;
 }
