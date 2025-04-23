@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     const char *file_input = argv[1];
     validate_input_file(file_input);
 
-    char *filename = get_filename_without_extension(file_input);
+    const char *filename = remove_extension(file_input);
     snprintf(out_file, sizeof(out_file), "%s.asm", filename);
 
     parser_create(file_input);
@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
     while (has_more_lines())
     {
         advance();
+        init_props();
         cmd_type = get_current_cmd_type();
         switch (cmd_type)
         {

@@ -13,6 +13,30 @@ void validate_input_file(const char *filename)
     fclose(file);
 }
 
+const char *remove_extension(const char *filename)
+{
+    char *result;
+
+    const char *dot = strrchr(filename, '.');
+
+    if (!dot)
+    {
+        return filename;
+    }
+    size_t len = dot - filename;
+
+    result = (char *)malloc(len + 1);
+
+    if (result)
+    {
+        strncpy(result, filename, len);
+        result[len] = '\0';
+
+        return result;
+    }
+    return NULL;
+}
+
 char *get_filename_without_extension(const char *filename)
 {
     char *result;

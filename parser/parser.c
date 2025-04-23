@@ -230,27 +230,29 @@ const char *arg1()
 int arg2()
 // this function will be called only if the current command is a c_push, c_pop, c_function, c_call
 {
-    return cmd ? cmd->arg2 : -1;
+    return cmd->arg2;
 }
 
-Command_Props *get_current_command()
+void init_props()
 {
-    return cmd;
+    command_type();
 }
 
 Command get_current_cmd_type(void)
 {
-    return cmd ? cmd->type : INVALID_TYPE;
+    return cmd->type;
 }
 const char *get_current_cmdstr(void)
 {
-    return cmd ? cmd->cmdstr : NULL;
+    return cmd->cmdstr;
 }
 const char *get_current_arg1(void)
 {
-    return cmd ? cmd->arg1 : NULL;
+    const char *arg_1 = arg1();
+    return arg_1;
 }
 int get_current_arg2(void)
 {
-    return cmd ? cmd->arg2 : 0;
+    int arg_2 = arg2();
+    return arg_2;
 }
