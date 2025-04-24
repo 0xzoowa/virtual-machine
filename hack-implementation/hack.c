@@ -53,7 +53,7 @@ void write_arithmetic(const char *command) // command_props->cmdstr: argument
         fprintf(stderr, "Invalid command");
         exit(EXIT_FAILURE);
     }
-    int label_counter = 0; // for generating unique labels
+    static int label_counter = 0; // for generating unique labels
 
     // Unary operations
     if (strcmp(command, "neg") == 0 || strcmp(command, "not") == 0) // pop y
@@ -119,12 +119,14 @@ void write_arithmetic(const char *command) // command_props->cmdstr: argument
         // Comparison logic
         int id = label_counter++;
         fprintf(output_file,
-                "@R13\nD=D-M\n"                       // x - y
-                "@TRUE%d\nD;%s\n"                     // if x-y==0|>0|<0 jump
-                "@SP\nA=M\nM=0\n@CONTINUE%d\n0;JMP\n" // false (0)
-                "(TRUE%d)\n@SP\nA=M\nM=-1\n"          // true (-1)
-                "(CONTINUE%d)\n"
-                "@SP\nM=M+1\n",
+                "@R13\nD=D-M\n"    // x - y
+                "@TRUE_%d\nD;%s\n" // if condition met jump to TRUE
+                "@SP\nA=M\nM=0\n"  // false case
+                "@CONTINUE_%d\n0;JMP\n"
+                "(TRUE_%d)\n"
+                "@SP\nA=M\nM=-1\n" // true case
+                "(CONTINUE_%d)\n"
+                "@SP\nM=M+1\n", // increment SP
                 id, jump, id, id, id);
         return;
     }
@@ -153,12 +155,12 @@ void write_push_pop(Command command, const char *segment, int index)
         if (strcmp(segment, "constant") == 0)
         {
             fprintf(output_file, "@%d\n"
-                                 "D = A\n"
+                                 "D=A\n"
                                  "@SP\n"
-                                 "A = M\n"
-                                 "M = D\n"
+                                 "A=M\n"
+                                 "M=D\n"
                                  "@SP\n"
-                                 "M = M + 1\n",
+                                 "M=M+1\n",
                     index);
             return;
         }
@@ -167,26 +169,24 @@ void write_push_pop(Command command, const char *segment, int index)
             if (index == 0)
             {
                 // push value of this into stack
-                fprintf(output_file, "@THIS"
-                                     "A=M"
-                                     "D=M"
-                                     "@SP"
-                                     "A=M"
-                                     "M=D"
-                                     "@SP"
-                                     "M = M + 1");
+                fprintf(output_file, "@THIS\n"
+                                     "D=M\n"
+                                     "@SP\n"
+                                     "A=M\n"
+                                     "M=D\n"
+                                     "@SP\n"
+                                     "M=M+1\n");
             }
             else if (index == 1)
             {
                 // push value of that into the stack
-                fprintf(output_file, "@THAT"
-                                     "A=M"
-                                     "D=M"
-                                     "@SP"
-                                     "A=M"
-                                     "M=D"
-                                     "@SP"
-                                     "M = M + 1");
+                fprintf(output_file, "@THAT\n"
+                                     "D=M\n"
+                                     "@SP\n"
+                                     "A=M\n"
+                                     "M=D\n"
+                                     "@SP\n"
+                                     "M=M+1\n");
             }
             else
             {
@@ -220,7 +220,7 @@ void write_push_pop(Command command, const char *segment, int index)
                                  "A=M\n"
                                  "M=D\n"
                                  "@SP\n"
-                                 "M=M+1",
+                                 "M=M+1\n",
                     static_segment);
             return;
         }
@@ -240,22 +240,20 @@ void write_push_pop(Command command, const char *segment, int index)
             {
 
                 // pop value from stack into this
-                fprintf(output_file, "@SP"
-                                     "AM=M-1"
-                                     "D=M"
-                                     "@THIS"
-                                     "A=M"
-                                     "M=D");
+                fprintf(output_file, "@SP\n"
+                                     "AM=M-1\n"
+                                     "D=M\n"
+                                     "@THIS\n"
+                                     "M=D\n");
             }
             else if (index == 1)
             {
                 // pop value from stack into this
-                fprintf(output_file, "@SP"
-                                     "AM=M-1"
-                                     "D=M"
-                                     "@THAT"
-                                     "A=M"
-                                     "M=D");
+                fprintf(output_file, "@SP\n"
+                                     "AM=M-1\n"
+                                     "D=M\n"
+                                     "@THAT\n"
+                                     "M=D\n");
             }
             else
             {
@@ -313,15 +311,15 @@ static void hack_push(int index, const char *segment)
         return;
     }
     fprintf(output_file, " @%d\n"
-                         "D = A\n"
+                         "D=A\n"
                          "@%s\n"
-                         "A = M + D\n"
-                         "D = M\n"
+                         "A=D+M\n"
+                         "D=M\n"
                          "@SP\n"
-                         "A = M\n"
-                         "M = D\n"
+                         "A=M\n"
+                         "M=D\n"
                          "@SP\n"
-                         "M = M + 1\n",
+                         "M=M+1\n",
             index, code);
 }
 static void hack_pop(int index, const char *segment)
@@ -342,7 +340,7 @@ static void hack_pop(int index, const char *segment)
             "@%d\n"
             "D=A\n"
             "@%s\n"
-            "D=M+D\n"
+            "D=D+M\n"
             "@R14\n"
             "M=D\n"
             "@R13\n"
@@ -376,4 +374,12 @@ static char *get_code(const char *segment)
         code = NULL;
 
     return code;
+}
+
+void end()
+{
+    fprintf(output_file,
+            "(END)\n"
+            "@END\n"
+            "0;JMP");
 }

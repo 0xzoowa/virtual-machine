@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    end();
     platform_destroy();
     parser_destroy();
 
