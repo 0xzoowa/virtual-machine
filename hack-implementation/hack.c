@@ -46,7 +46,7 @@ void platform_destroy()
     }
 }
 
-void write_arithmetic(const char *command) // command_props->cmdstr: argument
+void write_arithmetic(const char *command)
 {
     if (command == NULL)
     {
