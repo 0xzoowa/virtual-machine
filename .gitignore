@@ -21,7 +21,7 @@
 *.pdb
 
 # --- IDE/Editor Files ---
-.vscode/
+.vscode
 .idea/
 *.swp
 *.swo
