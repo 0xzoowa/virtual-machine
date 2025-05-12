@@ -1,16 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <limits.h>
 #include "hack-implementation/hack.h"
 #include "parser/parser.h"
 #include "helper.h"
 
+void process_command(const char *);
+
+char out_file[MAX_CHAR];
+Command cmd_type;
+const char *cmd_str;
+const char *arg1;
+int arg2;
+char path[PATH_MAX];
+
 int main(int argc, char *argv[])
 {
-    char out_file[MAX_CHAR];
-    Command cmd_type;
-    const char *cmd_str;
-    const char *arg1;
-    int arg2;
 
     if (argc < 2)
     {
@@ -18,13 +24,50 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    const char *file_input = argv[1];
-    validate_input_file(file_input);
+    const char *input = argv[1];
 
-    const char *filename = remove_extension(file_input);
+    // construct output file with the specified extension
+    const char *filename = remove_extension(input);
     snprintf(out_file, sizeof(out_file), "%s.asm", filename);
 
-    parser_create(file_input);
+    DIR *dir = opendir(input);
+    if (dir == NULL) // if null, should be a file
+    {
+        set_file_name(get_filename_without_extension(input));
+        process_command(input);
+    }
+    else
+    {
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL)
+        {
+            // skip .(current dir) and ..(parent dir)
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+
+            snprintf(path, sizeof(path), "%s/%s", input, entry->d_name);
+            // set_file_name
+            set_file_name(remove_extension(entry->d_name));
+            process_command(path);
+        }
+        closedir(dir);
+    }
+    end();
+    platform_destroy();
+    parser_destroy();
+
+    return 0;
+}
+
+void process_command(const char *file)
+{
+    bool is_valid_file = validate_input_file(file);
+    if (!is_valid_file)
+    {
+        exit(EXIT_FAILURE);
+    }
+
+    parser_create(file);
     platform_create(out_file);
 
     while (has_more_lines())
@@ -53,10 +96,4 @@ int main(int argc, char *argv[])
             break;
         }
     }
-
-    end();
-    platform_destroy();
-    parser_destroy();
-
-    return 0;
 }

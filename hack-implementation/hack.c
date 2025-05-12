@@ -8,6 +8,7 @@
 static char *get_code(const char *);
 static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
+void set_file_name(char *filename);
 
 static FILE *output_file = NULL;
 static char *basename = NULL;
@@ -22,14 +23,14 @@ void platform_create(char *filename)
         fprintf(stderr, "Error: Could not create output file %s\n", filename);
         exit(EXIT_FAILURE);
     }
-    basename = get_filename_without_extension(filename);
-    if (!basename)
-    {
-        fclose(output_file);
-        output_file = NULL;
-        fprintf(stderr, "Error: Could not extract basename from output file %s\n", filename);
-        exit(EXIT_FAILURE);
-    }
+    // basename = get_filename_without_extension(filename);
+    // if (!basename)
+    // {
+    //     fclose(output_file);
+    //     output_file = NULL;
+    //     fprintf(stderr, "Error: Could not extract basename from output file %s\n", filename);
+    //     exit(EXIT_FAILURE);
+    // }
 }
 
 void platform_destroy()
@@ -382,4 +383,9 @@ void end()
             "(END)\n"
             "@END\n"
             "0;JMP");
+}
+
+void set_file_name(char *filename)
+{
+    basename = filename;
 }
