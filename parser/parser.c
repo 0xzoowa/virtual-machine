@@ -168,6 +168,15 @@ static int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
 static void cmd_type(const char *line)
 {
     char *arithmetic_logical_cmds[] = {
+
+        "pop",
+        "push",
+        "function",
+        "call",
+        "return",
+        "goto",
+        "if-goto",
+        "label",
         "add",
         "sub",
         "neg",
@@ -177,14 +186,13 @@ static void cmd_type(const char *line)
         "and",
         "or",
         "not",
-        "pop",
-        "push",
     };
 
     size_t len = sizeof(arithmetic_logical_cmds) / sizeof(arithmetic_logical_cmds[0]);
 
     for (size_t i = 0; i < len; i++)
     {
+        // C_LABEL C_GOTO C_IF C_FUNCTION C_RETURN C_CALL
         if (strcmp(line, arithmetic_logical_cmds[i]) == 0)
         {
             if (strcmp(line, "push") == 0)
@@ -194,6 +202,30 @@ static void cmd_type(const char *line)
             else if (strcmp(line, "pop") == 0)
             {
                 cmd->type = C_POP;
+            }
+            else if (strcmp(line, "function") == 0)
+            {
+                cmd->type = C_FUNCTION;
+            }
+            else if (strcmp(line, "call") == 0)
+            {
+                cmd->type = C_CALL;
+            }
+            else if (strcmp(line, "return") == 0)
+            {
+                cmd->type = C_RETURN;
+            }
+            else if (strcmp(line, "label") == 0)
+            {
+                cmd->type = C_LABEL;
+            }
+            else if (strcmp(line, "goto") == 0)
+            {
+                cmd->type = C_GOTO;
+            }
+            else if (strcmp(line, "if-goto") == 0)
+            {
+                cmd->type = C_IF;
             }
             else
             {
@@ -209,9 +241,6 @@ static void cmd_type(const char *line)
 }
 
 const char *arg1()
-// check for default type(INVALID_TYPE) when function is called: char *result = arg1(); if (result != INVALID_TYPE) ...
-// should not be called if the type of the current command is a c_return
-
 {
     switch (cmd->type)
     {
@@ -220,15 +249,21 @@ const char *arg1()
 
     case C_PUSH:
     case C_POP:
+    case C_LABEL:
+    case C_GOTO:
+    case C_IF:
+    case C_FUNCTION:
+    case C_RETURN:
+    case C_CALL:
         return cmd->arg1;
 
     default:
-        return cmd->cmdstr;
+        return cmd->cmdstr; // invalid
     }
 }
 
 int arg2()
-// this function will be called only if the current command is a c_push, c_pop, c_function, c_call
+// should only be called if the current command is a c_push, c_pop, c_function, c_call
 {
     return cmd->arg2;
 }
@@ -255,4 +290,9 @@ int get_current_arg2(void)
 {
     int arg_2 = arg2();
     return arg_2;
+}
+
+char *current_command()
+{
+    return current_line;
 }

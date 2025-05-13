@@ -9,6 +9,7 @@ static char *get_code(const char *);
 static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
 void set_file_name(char *filename);
+static void vm_command();
 
 static FILE *output_file = NULL;
 static char *basename = NULL;
@@ -23,14 +24,6 @@ void platform_create(char *filename)
         fprintf(stderr, "Error: Could not create output file %s\n", filename);
         exit(EXIT_FAILURE);
     }
-    // basename = get_filename_without_extension(filename);
-    // if (!basename)
-    // {
-    //     fclose(output_file);
-    //     output_file = NULL;
-    //     fprintf(stderr, "Error: Could not extract basename from output file %s\n", filename);
-    //     exit(EXIT_FAILURE);
-    // }
 }
 
 void platform_destroy()
@@ -56,6 +49,7 @@ void write_arithmetic(const char *command)
     }
     static int label_counter = 0; // for generating unique labels
 
+    vm_command();
     // Unary operations
     if (strcmp(command, "neg") == 0 || strcmp(command, "not") == 0) // pop y
     {
@@ -150,6 +144,7 @@ void write_push_pop(Command command, const char *segment, int index)
         exit(EXIT_FAILURE);
     }
 
+    vm_command();
     switch (command)
     {
     case C_PUSH:
@@ -377,6 +372,26 @@ static char *get_code(const char *segment)
     return code;
 }
 
+void write_label(char *label)
+{
+
+    fprintf(output_file, "(%s)", label);
+}
+
+void write_if(char *label)
+{
+    fprintf(output_file, "@SP\n"
+                         "AM=M-1\n"
+                         "D=M\n"
+                         "@%s\n"
+                         "D;JNE\n",
+            label);
+}
+void write_goto(char *label)
+{
+    fprintf(output_file, "@%s", label);
+}
+
 void end()
 {
     fprintf(output_file,
@@ -388,4 +403,9 @@ void end()
 void set_file_name(char *filename)
 {
     basename = filename;
+}
+
+static void vm_command()
+{
+    fprintf(output_file, "//%s\n", current_command());
 }
