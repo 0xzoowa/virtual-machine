@@ -306,7 +306,7 @@ static void hack_push(int index, const char *segment)
         fprintf(stderr, "ERROR GETTING SEGMENT CODE");
         return;
     }
-    fprintf(output_file, " @%d\n"
+    fprintf(output_file, "@%d\n"
                          "D=A\n"
                          "@%s\n"
                          "A=D+M\n"
@@ -372,13 +372,13 @@ static char *get_code(const char *segment)
     return code;
 }
 
-void write_label(char *label)
+void write_label(const char *label)
 {
 
-    fprintf(output_file, "(%s)", label);
+    fprintf(output_file, "(%s)\n", label);
 }
 
-void write_if(char *label)
+void write_if(const char *label)
 {
     fprintf(output_file, "@SP\n"
                          "AM=M-1\n"
@@ -387,9 +387,9 @@ void write_if(char *label)
                          "D;JNE\n",
             label);
 }
-void write_goto(char *label)
+void write_goto(const char *label)
 {
-    fprintf(output_file, "@%s", label);
+    fprintf(output_file, "@%s\n", label);
 }
 
 void end()

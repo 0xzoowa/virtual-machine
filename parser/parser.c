@@ -18,9 +18,9 @@ static void cmd_type(const char *line);
 typedef struct cmd_props
 {
     Command type;
-    const char *cmdstr; // command type
-    const char *arg1;   // segment
-    int arg2;           // non negative integer
+    char *cmdstr; // command type
+    char *arg1;   // segment
+    int arg2;     // non negative integer
 
 } Command_Props;
 
@@ -240,7 +240,7 @@ static void cmd_type(const char *line)
     return;
 }
 
-const char *arg1()
+char *arg1()
 {
     switch (cmd->type)
     {

@@ -5,6 +5,7 @@
         "string.h": "c",
         "stdlib.h": "c",
         "parser.h": "c",
-        "helper.h": "c"
+        "helper.h": "c",
+        "platform.h": "c"
     }
 }

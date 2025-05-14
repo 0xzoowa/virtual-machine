@@ -34,7 +34,7 @@ void parser_create(const char *file);
 bool has_more_lines(void);
 void advance();
 Command_Props *command_type(void);
-const char *arg1(void);
+char *arg1(void);
 int arg2(void);
 void parser_destroy(void);
 char *current_command();
