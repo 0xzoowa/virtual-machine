@@ -345,6 +345,7 @@ static void hack_pop(int index, const char *segment)
             "A=M\n"
             "M=D\n",
             index, code);
+    return;
 }
 
 static char *get_code(const char *segment)
@@ -374,22 +375,30 @@ static char *get_code(const char *segment)
 
 void write_label(const char *label)
 {
+    vm_command();
 
     fprintf(output_file, "(%s)\n", label);
+    return;
 }
 
 void write_if(const char *label)
 {
+    vm_command();
     fprintf(output_file, "@SP\n"
                          "AM=M-1\n"
                          "D=M\n"
                          "@%s\n"
                          "D;JNE\n",
             label);
+    return;
 }
 void write_goto(const char *label)
 {
-    fprintf(output_file, "@%s\n", label);
+    vm_command();
+    fprintf(output_file, "@%s\n"
+                         "0;JMP\n",
+            label);
+    return;
 }
 
 void end()
@@ -407,5 +416,9 @@ void set_file_name(char *filename)
 
 static void vm_command()
 {
-    fprintf(output_file, "//%s\n", current_command());
+    char *line = current_command();
+    if (*line != '\0')
+    {
+        fprintf(output_file, "//%s\n", line);
+    }
 }

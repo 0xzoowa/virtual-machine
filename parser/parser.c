@@ -62,9 +62,20 @@ bool has_more_lines()
 
 void advance() // check if current_line is empty whenever you call advance
 {
-    fgets(current_line, MAX_LINE_LENGTH, input);
-    // strip comments and white spaces
-    strip(current_line); // should return an empty string ('\0') if string/line contains only whitespace and comment
+
+    do
+    {
+        if (!fgets(current_line, MAX_LINE_LENGTH, input))
+        {
+            current_line[0] = '\0'; // end of file
+            return;
+        }
+        strip(current_line);
+    } while (*current_line == '\0');
+    // /
+    //     fgets(current_line, MAX_LINE_LENGTH, input);
+    // // strip comments and white spaces
+    // strip(current_line); // should return an empty string ('\0') if string/line contains only whitespace and comment
 }
 
 void parser_destroy()
@@ -122,6 +133,10 @@ Command_Props *command_type() // analyse default values for structs and arrays
         cmd_type(tokens[0]);
         if (cmd->type != INVALID_TYPE && cmd->type != C_ARITHMETIC)
         {
+            if (no_of_cmds == 2)
+            {
+                cmd->arg1 = tokens[1];
+            }
             if (no_of_cmds >= 3)
             {
                 cmd->arg1 = tokens[1];

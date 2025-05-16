@@ -82,8 +82,12 @@ void process_command(const char *file)
         advance();
         init_props();
         cmd_type = get_current_cmd_type();
+
+        if (cmd_type == INVALID_TYPE)
+            continue;
+
         arg_1 = get_current_arg1();
-        arg_2 = get_current_arg2();
+
         switch (cmd_type)
         {
         case C_ARITHMETIC:
@@ -95,6 +99,7 @@ void process_command(const char *file)
         case C_PUSH:
         case C_FUNCTION:
         case C_CALL:
+            arg_2 = get_current_arg2();
             write_push_pop(cmd_type, arg_1, arg_2);
             break;
         case C_GOTO:
@@ -106,9 +111,6 @@ void process_command(const char *file)
         case C_LABEL:
             write_label(arg_1);
             break;
-        case INVALID_TYPE:
-            break;
-
         default:
             break;
         }
