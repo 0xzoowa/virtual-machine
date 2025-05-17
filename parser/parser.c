@@ -60,9 +60,8 @@ bool has_more_lines()
     return true;
 }
 
-void advance() // check if current_line is empty whenever you call advance
+void advance()
 {
-
     do
     {
         if (!fgets(current_line, MAX_LINE_LENGTH, input))
@@ -72,10 +71,7 @@ void advance() // check if current_line is empty whenever you call advance
         }
         strip(current_line);
     } while (*current_line == '\0');
-    // /
-    //     fgets(current_line, MAX_LINE_LENGTH, input);
-    // // strip comments and white spaces
-    // strip(current_line); // should return an empty string ('\0') if string/line contains only whitespace and comment
+    // should return an empty string ('\0') if string/line contains only whitespace and comment
 }
 
 void parser_destroy()

@@ -10,10 +10,13 @@ static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
 void set_file_name(char *filename);
 static void vm_command();
+static void initialize_lcl(int n_vars);
 
 static FILE *output_file = NULL;
 static char *basename = NULL;
 static char static_segment[MAX_CHAR];
+static char *current_function_name = NULL;
+static long return_label_counter = 0;
 
 void platform_create(char *filename)
 {
@@ -377,7 +380,7 @@ void write_label(const char *label)
 {
     vm_command();
 
-    fprintf(output_file, "(%s)\n", label);
+    fprintf(output_file, "(%s.%s$%s)\n", basename, current_function_name, label);
     return;
 }
 
@@ -387,20 +390,119 @@ void write_if(const char *label)
     fprintf(output_file, "@SP\n"
                          "AM=M-1\n"
                          "D=M\n"
-                         "@%s\n"
+                         "@%s.%s$%s\n"
                          "D;JNE\n",
-            label);
+            basename, current_function_name, label);
     return;
 }
 void write_goto(const char *label)
 {
     vm_command();
-    fprintf(output_file, "@%s\n"
+    fprintf(output_file, "@%s.%s$%s\n"
                          "0;JMP\n",
-            label);
+            basename, current_function_name, label);
     return;
 }
 
+void write_function(char *function_name, int n_vars)
+{
+    vm_command();
+    if (current_function_name != NULL)
+    {
+        free(current_function_name);
+    }
+    current_function_name = strdup(function_name);
+
+    // generate function label
+    char function_label[MAX_CHAR];
+    snprintf(function_label, sizeof(function_label), "%s.%s", basename, function_name);
+
+    fprintf(output_file,
+
+            // emit function label
+            "(%s)\n",
+            function_label);
+    initialize_lcl(n_vars);
+}
+void write_call(char *function_name, int n_args)
+{
+    vm_command();
+    // generate return address label
+    char return_addr[MAX_CHAR];
+
+    snprintf(return_addr, sizeof(return_addr), "%s.%s$ret.%i", basename, current_function_name, return_label_counter++);
+    fprintf(output_file,
+
+            // save return address
+            "@%s\n"
+            "D=A\n"
+            "@SP\n"
+            "A=M\n"
+            "M=D\n"
+            "@SP\n"
+            "M=M+1\n"
+
+            // save LCL
+            "@LCL\n"
+            "D=M\n"
+            "@SP\n"
+            "A=M\n"
+            "M=D\n"
+            "@SP\n"
+            "M=M+1\n"
+
+            // save ARG
+            "@ARG\n"
+            "D=M\n"
+            "@SP\n"
+            "A=M\n"
+            "M=D\n"
+            "@SP\n"
+            "M=M+1\n"
+
+            // save THIS
+            "@THIS\n"
+            "D=M\n"
+            "@SP\n"
+            "A=M\n"
+            "M=D\n"
+            "@SP\n"
+            "M=M+1\n"
+
+            // save THAT
+            "@THAT\n"
+            "D=M\n"
+            "@SP\n"
+            "A=M\n"
+            "M=D\n"
+            "@SP\n"
+            "M=M+1\n"
+
+            // reposition ARG
+            "@SP\n"
+            "D=M\n"
+            "@%i\n"
+            "D=D-A\n"
+            "@ARG\n"
+            "M=D\n"
+
+            // reposition LCL
+            "@SP\n"
+            "D=M\n"
+            "@LCL\n"
+            "M=D\n"
+
+            // goto called function
+            "@%s\n"
+            "0;JMP\n"
+
+            // emit label
+            "(%s)\n",
+            return_addr,
+            5 + n_args, function_name, return_addr);
+}
+
+void write_return() {} // todo
 void end()
 {
     fprintf(output_file,
@@ -420,5 +522,24 @@ static void vm_command()
     if (*line != '\0')
     {
         fprintf(output_file, "//%s\n", line);
+    }
+}
+
+static void initialize_lcl(int n_vars)
+{
+    int count = 0;
+    while (count < n_vars)
+    {
+        fprintf(output_file,
+
+                // allocate and initialize local segments
+                "@0\n"
+                "D=A\n"
+                "@SP\n"
+                "A=M\n"
+                "M=0\n"
+                "@SP\n"
+                "M=M+1\n");
+        count++;
     }
 }

@@ -14,6 +14,9 @@ void set_file_name(char *);
 void write_label(const char *label);
 void write_if(const char *label);
 void write_goto(const char *label);
+void write_function(char *function_name, int n_vars);
+void write_call(char *function_name, int n_args);
+void write_return();
 void end(void);
 
 #endif
