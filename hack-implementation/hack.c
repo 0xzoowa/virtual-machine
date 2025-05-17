@@ -11,6 +11,7 @@ static void hack_pop(int, const char *);
 void set_file_name(char *filename);
 static void vm_command();
 static void initialize_lcl(int n_vars);
+static void bootstrap_code();
 
 static FILE *output_file = NULL;
 static char *basename = NULL;
@@ -27,6 +28,7 @@ void platform_create(char *filename)
         fprintf(stderr, "Error: Could not create output file %s\n", filename);
         exit(EXIT_FAILURE);
     }
+    bootstrap_code();
 }
 
 void platform_destroy()
@@ -502,7 +504,78 @@ void write_call(char *function_name, int n_args)
             5 + n_args, function_name, return_addr);
 }
 
-void write_return() {} // todo
+void write_return()
+{
+    vm_command();
+    fprintf(output_file,
+            // FRAME = LCL
+            "@LCL\n"
+            "D=M\n"
+            "@R13\n"
+            "M=D\n"
+
+            // RET = *(FRAME - 5)
+            "@5\n"
+            "A=D-A\n"
+            "D=M\n"
+            "@R14\n"
+            "M=D\n"
+
+            // *ARG = pop()
+            "@SP\n"
+            "AM=M-1\n"
+            "D=M\n"
+            "@ARG\n"
+            "A=M\n"
+            "M=D\n"
+
+            // SP = ARG + 1
+            "@ARG\n"
+            "D=M+1\n"
+            "@SP\n"
+            "M=D\n"
+
+            // THAT = *(FRAME - 1)
+            "@R13\n"
+            "D=M\n"
+            "@1\n"
+            "A=D-A\n"
+            "D=M\n"
+            "@THAT\n"
+            "M=D\n"
+
+            // THIS = *(FRAME - 2)
+            "@R13\n"
+            "D=M\n"
+            "@2\n"
+            "A=D-A\n"
+            "D=M\n"
+            "@THIS\n"
+            "M=D\n"
+
+            // ARG = *(FRAME - 3)
+            "@R13\n"
+            "D=M\n"
+            "@3\n"
+            "A=D-A\n"
+            "D=M\n"
+            "@ARG\n"
+            "M=D\n"
+
+            // LCL = *(FRAME - 4)
+            "@R13\n"
+            "D=M\n"
+            "@4\n"
+            "A=D-A\n"
+            "D=M\n"
+            "@LCL\n"
+            "M=D\n"
+
+            // goto RET
+            "@R14\n"
+            "A=M\n"
+            "0;JMP\n");
+}
 void end()
 {
     fprintf(output_file,
@@ -542,4 +615,19 @@ static void initialize_lcl(int n_vars)
                 "M=M+1\n");
         count++;
     }
+}
+
+static void bootstrap_code()
+{
+
+    fprintf(output_file,
+            // SP=256
+            "@256\n"
+            "D=A\n"
+            "@0\n"
+            "M=D\n"
+
+    );
+    // call Sys.init with 0 arguments
+    write_call("Sys.init", 0);
 }
