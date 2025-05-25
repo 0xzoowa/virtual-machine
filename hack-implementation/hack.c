@@ -5,7 +5,7 @@
 #include "../parser/parser.h"
 #include "../helper.h"
 
-static char *get_code(const char *);
+static char *get_code(const char *, int index);
 static void hack_push(int, const char *);
 static void hack_pop(int, const char *);
 void set_file_name(char *filename);
@@ -56,18 +56,34 @@ void write_arithmetic(const char *command)
 
     vm_command();
     // Unary operations
-    if (strcmp(command, "neg") == 0 || strcmp(command, "not") == 0) // pop y
+    // if (strcmp(command, "neg") == 0 || strcmp(command, "not") == 0) // pop y
+    // {
+    //     fprintf(output_file, "@SP\nAM=M-1\nD=M\n");
+    //     if (strcmp(command, "neg") == 0)
+    //     {
+    //         fprintf(output_file, "D=-D\n"); // negate y
+    //     }
+    //     else
+    //     {
+    //         fprintf(output_file, "D=!D\n"); // not y
+    //     }
+    //     fprintf(output_file, "@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // push y, increment sp
+    //     return;
+    // }
+    if (strcmp(command, "neg") == 0)
     {
-        fprintf(output_file, "@SP\nAM=M-1\nD=M\n");
-        if (strcmp(command, "neg") == 0)
-        {
-            fprintf(output_file, "D=-D\n"); // negate y
-        }
-        else
-        {
-            fprintf(output_file, "D=!D\n"); // not y
-        }
-        fprintf(output_file, "@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // push y, increment sp
+        fprintf(output_file,
+                "@SP\n"
+                "A=M-1\n"
+                "M=-M\n");
+        return;
+    }
+    else if (strcmp(command, "not") == 0)
+    {
+        fprintf(output_file,
+                "@SP\n"
+                "A=M-1\n"
+                "M=!M\n");
         return;
     }
 
@@ -167,32 +183,53 @@ void write_push_pop(Command command, const char *segment, int index)
         }
         else if (strcmp(segment, "pointer") == 0)
         {
-            if (index == 0)
+            if (index < 0 || index > 1)
             {
-                // push value of this into stack
-                fprintf(output_file, "@THIS\n"
-                                     "D=M\n"
-                                     "@SP\n"
-                                     "A=M\n"
-                                     "M=D\n"
-                                     "@SP\n"
-                                     "M=M+1\n");
+                fprintf(stderr, "Error: pointer index %d out of range (0-1)\n", index);
+                return;
             }
-            else if (index == 1)
-            {
-                // push value of that into the stack
-                fprintf(output_file, "@THAT\n"
-                                     "D=M\n"
-                                     "@SP\n"
-                                     "A=M\n"
-                                     "M=D\n"
-                                     "@SP\n"
-                                     "M=M+1\n");
-            }
-            else
-            {
-                fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
-            }
+            char *code = get_code(segment, index);
+
+            // push value of this into stack
+            fprintf(output_file, "@%s\n"
+                                 "D=M\n"
+                                 "@SP\n"
+                                 "A=M\n"
+                                 "M=D\n"
+                                 "@SP\n"
+                                 "M=M+1\n",
+                    code);
+
+            // if (index == 0)
+            // {
+            //     char *code = get_code(segment, index);
+            //     // push value of this into stack
+            //     fprintf(output_file, "@%s\n"
+            //                          "D=M\n"
+            //                          "@SP\n"
+            //                          "A=M\n"
+            //                          "M=D\n"
+            //                          "@SP\n"
+            //                          "M=M+1\n",
+            //             code);
+            // }
+            // else if (index == 1)
+            // {
+            //     char *code = get_code(segment, index);
+            //     // push value of that into the stack
+            //     fprintf(output_file, "@%s\n"
+            //                          "D=M\n"
+            //                          "@SP\n"
+            //                          "A=M\n"
+            //                          "M=D\n"
+            //                          "@SP\n"
+            //                          "M=M+1\n",
+            //             code);
+            // }
+            // else
+            // {
+            //     fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
+            // }
 
             return;
         }
@@ -203,18 +240,25 @@ void write_push_pop(Command command, const char *segment, int index)
                 fprintf(stderr, "Error: temp index %d out of range (0-7)\n", index);
                 return;
             }
-            fprintf(output_file, "@%d\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", 5 + index);
+            char *code = get_code(segment, index);
+            fprintf(output_file, "@%s\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", code);
             return;
         }
         else if (strcmp(segment, "static") == 0)
         {
-            if (index < 0 || index > 239)
-            {
-                fprintf(stderr, "Error: static index %d out of range (0-239)\n", index);
-                return;
-            }
-
+            char *code = get_code(segment, index);
             snprintf(static_segment, sizeof(static_segment), "%s.%d", basename, index);
+            // fprintf(output_file, "@%s\n"
+            //                      "D=A\n"
+            //                      "@%i\n"
+            //                      "A=D+A\n"
+            //                      "D=M\n"
+            //                      "@SP\n"
+            //                      "A=M\n"
+            //                      "M=D\n"
+            //                      "@SP\n"
+            //                      "M=M+1\n",
+            //         code, index);
             fprintf(output_file, "@%s\n"
                                  "D=M\n"
                                  "@SP\n"
@@ -236,30 +280,49 @@ void write_push_pop(Command command, const char *segment, int index)
 
         if (strcmp(segment, "pointer") == 0)
         {
+            if (index < 0 || index > 1)
+            {
+                fprintf(stderr, "Error: pointer index %d out of range (0-1)\n", index);
+                return;
+            }
 
-            if (index == 0)
-            {
+            char *code = get_code(segment, index);
 
-                // pop value from stack into this
-                fprintf(output_file, "@SP\n"
-                                     "AM=M-1\n"
-                                     "D=M\n"
-                                     "@THIS\n"
-                                     "M=D\n");
-            }
-            else if (index == 1)
-            {
-                // pop value from stack into this
-                fprintf(output_file, "@SP\n"
-                                     "AM=M-1\n"
-                                     "D=M\n"
-                                     "@THAT\n"
-                                     "M=D\n");
-            }
-            else
-            {
-                fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
-            }
+            // pop value from stack into this
+            fprintf(output_file, "@SP\n"
+                                 "AM=M-1\n"
+                                 "D=M\n"
+                                 "@%s\n"
+                                 "M=D\n",
+                    code);
+
+            // if (index == 0)
+            // {
+            //     char *code = get_code(segment, index);
+
+            //     // pop value from stack into this
+            //     fprintf(output_file, "@SP\n"
+            //                          "AM=M-1\n"
+            //                          "D=M\n"
+            //                          "@%s\n"
+            //                          "M=D\n",
+            //             code);
+            // }
+            // else if (index == 1)
+            // {
+            //     char *code = get_code(segment, index);
+            //     // pop value from stack into this
+            //     fprintf(output_file, "@SP\n"
+            //                          "AM=M-1\n"
+            //                          "D=M\n"
+            //                          "@%s\n"
+            //                          "M=D\n",
+            //             code);
+            // }
+            // else
+            // {
+            //     fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
+            // }
             return;
         }
 
@@ -270,19 +333,29 @@ void write_push_pop(Command command, const char *segment, int index)
                 fprintf(stderr, "Error: temp index %d out of range (0-7)\n", index);
                 return;
             }
+            char *code = get_code(segment, index);
 
-            fprintf(output_file, "@SP\nAM=M-1\nD=M\n@%d\nM=D\n", 5 + index);
+            fprintf(output_file, "@SP\nAM=M-1\nD=M\n@%s\nM=D\n", code);
             return;
         }
         else if (strcmp(segment, "static") == 0)
         {
-            if (index < 0 || index > 239)
-            {
-                fprintf(stderr, "Error: static index %d out of range (0-239)\n", index);
-                return;
-            }
-
+            char *code = get_code(segment, index);
             snprintf(static_segment, sizeof(static_segment), "%s.%d", basename, index);
+            // fprintf(output_file, "@%s\n"
+            //                      "D=A\n"
+            //                      "@%i\n"
+            //                      "D=D+A\n"
+            //                      "@R13\n"
+            //                      "M=D\n"
+            //                      "@SP\n"
+            //                      "AM=M-1\n"
+            //                      "D=M\n"
+            //                      "@R13\n"
+            //                      "A=M\n"
+            //                      "M=D\n",
+
+            //         code, index);
             fprintf(output_file, "@SP\n"
                                  "AM=M-1\n"
                                  "D=M\n"
@@ -305,10 +378,10 @@ void write_push_pop(Command command, const char *segment, int index)
 }
 static void hack_push(int index, const char *segment)
 {
-    char *code = get_code(segment);
+    char *code = get_code(segment, index);
     if (code == NULL)
     {
-        fprintf(stderr, "ERROR GETTING SEGMENT CODE");
+        fprintf(stderr, "Error getting segment code");
         return;
     }
     fprintf(output_file, "@%d\n"
@@ -325,10 +398,10 @@ static void hack_push(int index, const char *segment)
 }
 static void hack_pop(int index, const char *segment)
 {
-    char *code = get_code(segment);
+    char *code = get_code(segment, index);
     if (code == NULL)
     {
-        fprintf(stderr, "ERROR GETTING SEGMENT CODE");
+        fprintf(stderr, "Error getting segment code");
         return;
     }
 
@@ -338,75 +411,99 @@ static void hack_pop(int index, const char *segment)
             "D=M\n"
             "@R13\n"
             "M=D\n"
-            "@%d\n"
+            "@%d\n" // offset
             "D=A\n"
             "@%s\n"
-            "D=D+M\n"
+            "D=D+M\n" // new_loc =  base + offset
             "@R14\n"
-            "M=D\n"
+            "M=D\n" // stored new_loc
             "@R13\n"
             "D=M\n"
             "@R14\n"
             "A=M\n"
             "M=D\n",
             index, code);
+
     return;
 }
 
-static char *get_code(const char *segment)
+static char *get_code(const char *segment, int index)
 {
-    char *code;
+    static char code_buf[10];
     if (strcmp(segment, "local") == 0)
     {
-        code = "LCL";
+        return "LCL";
+    }
+    if (strcmp(segment, "static") == 0)
+    {
+        return "16";
     }
     else if (strcmp(segment, "argument") == 0)
     {
-        code = "ARG";
+        return "ARG";
     }
     else if (strcmp(segment, "this") == 0)
     {
-        code = "THIS";
+        return "THIS";
     }
     else if (strcmp(segment, "that") == 0)
     {
-        code = "THAT";
+        return "THAT";
+    }
+    else if (strcmp(segment, "pointer") == 0)
+    {
+        snprintf(code_buf, sizeof(code_buf), "R%i", 3 + index);
+        return code_buf;
+    }
+    else if (strcmp(segment, "temp") == 0)
+    {
+        snprintf(code_buf, sizeof(code_buf), "R%i", 5 + index);
+        return code_buf;
     }
     else
-        code = NULL;
-
-    return code;
+        return NULL;
 }
 
 void write_label(const char *label)
 {
     vm_command();
 
-    fprintf(output_file, "(%s.%s$%s)\n", basename, current_function_name, label);
+    // fprintf(output_file, "(%s.%s$%s)\n", basename, current_function_name, label);
+    fprintf(output_file, "(%s)\n", label);
     return;
 }
 
 void write_if(const char *label)
 {
     vm_command();
+    // fprintf(output_file, "@SP\n"
+    //                      "AM=M-1\n"
+    //                      "D=M\n"
+    //                      "@%s.%s$%s\n"
+    //                      "D;JNE\n",
+    //         basename, current_function_name, label);
     fprintf(output_file, "@SP\n"
                          "AM=M-1\n"
                          "D=M\n"
-                         "@%s.%s$%s\n"
+                         "@%s\n"
                          "D;JNE\n",
-            basename, current_function_name, label);
+            label);
     return;
 }
 void write_goto(const char *label)
 {
     vm_command();
-    fprintf(output_file, "@%s.%s$%s\n"
+    // fprintf(output_file, "@%s.%s$%s\n"
+    //                      "0;JMP\n",
+    //         basename, current_function_name, label);
+
+    fprintf(output_file, "@%s\n"
                          "0;JMP\n",
-            basename, current_function_name, label);
+            label);
     return;
 }
 
-void write_function(char *function_name, int n_vars)
+void write_function(const char *function_name, int n_vars)
 {
     vm_command();
     if (current_function_name != NULL)
@@ -417,22 +514,21 @@ void write_function(char *function_name, int n_vars)
 
     // generate function label
     char function_label[MAX_CHAR];
-    snprintf(function_label, sizeof(function_label), "%s.%s", basename, function_name);
+    snprintf(function_label, sizeof(function_label), "%s", function_name);
 
     fprintf(output_file,
 
             // emit function label
-            "(%s)\n",
-            function_label);
+            "(%s)\n", function_label);
     initialize_lcl(n_vars);
 }
-void write_call(char *function_name, int n_args)
+void write_call(const char *function_name, int n_args)
 {
     vm_command();
     // generate return address label
     char return_addr[MAX_CHAR];
 
-    snprintf(return_addr, sizeof(return_addr), "%s.%s$ret.%i", basename, current_function_name, return_label_counter++);
+    snprintf(return_addr, sizeof(return_addr), "%s$ret.%li", current_function_name, return_label_counter++);
     fprintf(output_file,
 
             // save return address
@@ -483,6 +579,8 @@ void write_call(char *function_name, int n_args)
             // reposition ARG
             "@SP\n"
             "D=M\n"
+            "@5\n"
+            "D=D-A\n"
             "@%i\n"
             "D=D-A\n"
             "@ARG\n"
@@ -501,7 +599,7 @@ void write_call(char *function_name, int n_args)
             // emit label
             "(%s)\n",
             return_addr,
-            5 + n_args, function_name, return_addr);
+            n_args, function_name, return_addr);
 }
 
 void write_return()
@@ -514,7 +612,8 @@ void write_return()
             "@R13\n"
             "M=D\n"
 
-            // RET = *(FRAME - 5)
+            "@R13\n"
+            "D=M\n"
             "@5\n"
             "A=D-A\n"
             "D=M\n"
@@ -600,34 +699,34 @@ static void vm_command()
 
 static void initialize_lcl(int n_vars)
 {
-    int count = 0;
-    while (count < n_vars)
-    {
-        fprintf(output_file,
 
-                // allocate and initialize local segments
-                "@0\n"
-                "D=A\n"
-                "@SP\n"
-                "A=M\n"
-                "M=0\n"
-                "@SP\n"
-                "M=M+1\n");
-        count++;
+    int count = 0;
+    while (count < n_vars) // n_vars=5 : 0✅ 1✅ 2✅ 3✅ 4✅ 5❌
+    {
+        fprintf(output_file, "@SP\n"
+                             "A=M\n"
+                             "M=0\n"
+                             "@SP\n"
+                             "M=M+1\n");
+        count++; // 1 2 3 4 5
     }
 }
 
 static void bootstrap_code()
 {
 
+    if (current_function_name != NULL)
+    {
+        free(current_function_name);
+    }
+    current_function_name = strdup("Sys.init");
+
     fprintf(output_file,
-            // SP=256
             "@256\n"
             "D=A\n"
-            "@0\n"
-            "M=D\n"
+            "@SP\n"
+            "M=D\n");
 
-    );
     // call Sys.init with 0 arguments
     write_call("Sys.init", 0);
 }

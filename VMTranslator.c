@@ -45,6 +45,10 @@ int main(int argc, char *argv[])
     else
     {
         struct dirent *entry;
+
+        snprintf(out_file, sizeof(out_file), "%s/%s.asm", input, get_filename_without_extension(input));
+        platform_create(out_file);
+
         while ((entry = readdir(dir)) != NULL)
         {
             // skip .(current dir) and ..(parent dir)
@@ -57,7 +61,7 @@ int main(int argc, char *argv[])
             {
                 continue;
             }
-            snprintf(out_file, sizeof(out_file), "%s/%s.asm", input, get_filename_without_extension(input));
+
             // set_file_name
             set_file_name(remove_extension(entry->d_name));
             process_command(path);
@@ -75,7 +79,6 @@ void process_command(const char *file)
 {
 
     parser_create(file);
-    platform_create(out_file);
 
     while (has_more_lines())
     {
@@ -97,8 +100,6 @@ void process_command(const char *file)
 
         case C_POP:
         case C_PUSH:
-        case C_FUNCTION:
-        case C_CALL:
             arg_2 = get_current_arg2();
             write_push_pop(cmd_type, arg_1, arg_2);
             break;
@@ -110,6 +111,17 @@ void process_command(const char *file)
             break;
         case C_LABEL:
             write_label(arg_1);
+            break;
+        case C_FUNCTION:
+            arg_2 = get_current_arg2();
+            write_function(arg_1, arg_2);
+            break;
+        case C_CALL:
+            arg_2 = get_current_arg2();
+            write_call(arg_1, arg_2);
+            break;
+        case C_RETURN:
+            write_return();
             break;
         default:
             break;

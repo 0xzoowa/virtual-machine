@@ -203,7 +203,6 @@ static void cmd_type(const char *line)
 
     for (size_t i = 0; i < len; i++)
     {
-        // C_LABEL C_GOTO C_IF C_FUNCTION C_RETURN C_CALL
         if (strcmp(line, arithmetic_logical_cmds[i]) == 0)
         {
             if (strcmp(line, "push") == 0)
@@ -264,7 +263,6 @@ char *arg1()
     case C_GOTO:
     case C_IF:
     case C_FUNCTION:
-    case C_RETURN:
     case C_CALL:
         return cmd->arg1;
 
