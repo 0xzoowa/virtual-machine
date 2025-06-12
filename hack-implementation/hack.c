@@ -55,21 +55,6 @@ void write_arithmetic(const char *command)
     static int label_counter = 0; // for generating unique labels
 
     vm_command();
-    // Unary operations
-    // if (strcmp(command, "neg") == 0 || strcmp(command, "not") == 0) // pop y
-    // {
-    //     fprintf(output_file, "@SP\nAM=M-1\nD=M\n");
-    //     if (strcmp(command, "neg") == 0)
-    //     {
-    //         fprintf(output_file, "D=-D\n"); // negate y
-    //     }
-    //     else
-    //     {
-    //         fprintf(output_file, "D=!D\n"); // not y
-    //     }
-    //     fprintf(output_file, "@SP\nA=M\nM=D\n@SP\nM=M+1\n"); // push y, increment sp
-    //     return;
-    // }
     if (strcmp(command, "neg") == 0)
     {
         fprintf(output_file,
@@ -135,14 +120,14 @@ void write_arithmetic(const char *command)
         // Comparison logic
         int id = label_counter++;
         fprintf(output_file,
-                "@R13\nD=D-M\n"    // x - y
-                "@TRUE_%d\nD;%s\n" // if condition met jump to TRUE
-                "@SP\nA=M\nM=0\n"  // false case
+                "@R13\nD=D-M\n"
+                "@TRUE_%d\nD;%s\n"
+                "@SP\nA=M\nM=0\n"
                 "@CONTINUE_%d\n0;JMP\n"
                 "(TRUE_%d)\n"
-                "@SP\nA=M\nM=-1\n" // true case
+                "@SP\nA=M\nM=-1\n"
                 "(CONTINUE_%d)\n"
-                "@SP\nM=M+1\n", // increment SP
+                "@SP\nM=M+1\n",
                 id, jump, id, id, id);
         return;
     }
@@ -200,37 +185,6 @@ void write_push_pop(Command command, const char *segment, int index)
                                  "M=M+1\n",
                     code);
 
-            // if (index == 0)
-            // {
-            //     char *code = get_code(segment, index);
-            //     // push value of this into stack
-            //     fprintf(output_file, "@%s\n"
-            //                          "D=M\n"
-            //                          "@SP\n"
-            //                          "A=M\n"
-            //                          "M=D\n"
-            //                          "@SP\n"
-            //                          "M=M+1\n",
-            //             code);
-            // }
-            // else if (index == 1)
-            // {
-            //     char *code = get_code(segment, index);
-            //     // push value of that into the stack
-            //     fprintf(output_file, "@%s\n"
-            //                          "D=M\n"
-            //                          "@SP\n"
-            //                          "A=M\n"
-            //                          "M=D\n"
-            //                          "@SP\n"
-            //                          "M=M+1\n",
-            //             code);
-            // }
-            // else
-            // {
-            //     fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
-            // }
-
             return;
         }
         else if (strcmp(segment, "temp") == 0)
@@ -285,34 +239,6 @@ void write_push_pop(Command command, const char *segment, int index)
                                  "@%s\n"
                                  "M=D\n",
                     code);
-
-            // if (index == 0)
-            // {
-            //     char *code = get_code(segment, index);
-
-            //     // pop value from stack into this
-            //     fprintf(output_file, "@SP\n"
-            //                          "AM=M-1\n"
-            //                          "D=M\n"
-            //                          "@%s\n"
-            //                          "M=D\n",
-            //             code);
-            // }
-            // else if (index == 1)
-            // {
-            //     char *code = get_code(segment, index);
-            //     // pop value from stack into this
-            //     fprintf(output_file, "@SP\n"
-            //                          "AM=M-1\n"
-            //                          "D=M\n"
-            //                          "@%s\n"
-            //                          "M=D\n",
-            //             code);
-            // }
-            // else
-            // {
-            //     fprintf(stderr, "Error: Invalid pointer index %d (must be 0 or 1)\n", index);
-            // }
             return;
         }
 
