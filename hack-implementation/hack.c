@@ -248,17 +248,7 @@ void write_push_pop(Command command, const char *segment, int index)
         {
             char *code = get_code(segment, index);
             snprintf(static_segment, sizeof(static_segment), "%s.%d", basename, index);
-            // fprintf(output_file, "@%s\n"
-            //                      "D=A\n"
-            //                      "@%i\n"
-            //                      "A=D+A\n"
-            //                      "D=M\n"
-            //                      "@SP\n"
-            //                      "A=M\n"
-            //                      "M=D\n"
-            //                      "@SP\n"
-            //                      "M=M+1\n",
-            //         code, index);
+
             fprintf(output_file, "@%s\n"
                                  "D=M\n"
                                  "@SP\n"
@@ -342,20 +332,7 @@ void write_push_pop(Command command, const char *segment, int index)
         {
             char *code = get_code(segment, index);
             snprintf(static_segment, sizeof(static_segment), "%s.%d", basename, index);
-            // fprintf(output_file, "@%s\n"
-            //                      "D=A\n"
-            //                      "@%i\n"
-            //                      "D=D+A\n"
-            //                      "@R13\n"
-            //                      "M=D\n"
-            //                      "@SP\n"
-            //                      "AM=M-1\n"
-            //                      "D=M\n"
-            //                      "@R13\n"
-            //                      "A=M\n"
-            //                      "M=D\n",
 
-            //         code, index);
             fprintf(output_file, "@SP\n"
                                  "AM=M-1\n"
                                  "D=M\n"
@@ -467,8 +444,6 @@ static char *get_code(const char *segment, int index)
 void write_label(const char *label)
 {
     vm_command();
-
-    // fprintf(output_file, "(%s.%s$%s)\n", basename, current_function_name, label);
     fprintf(output_file, "(%s)\n", label);
     return;
 }
@@ -476,12 +451,6 @@ void write_label(const char *label)
 void write_if(const char *label)
 {
     vm_command();
-    // fprintf(output_file, "@SP\n"
-    //                      "AM=M-1\n"
-    //                      "D=M\n"
-    //                      "@%s.%s$%s\n"
-    //                      "D;JNE\n",
-    //         basename, current_function_name, label);
     fprintf(output_file, "@SP\n"
                          "AM=M-1\n"
                          "D=M\n"
@@ -493,9 +462,6 @@ void write_if(const char *label)
 void write_goto(const char *label)
 {
     vm_command();
-    // fprintf(output_file, "@%s.%s$%s\n"
-    //                      "0;JMP\n",
-    //         basename, current_function_name, label);
 
     fprintf(output_file, "@%s\n"
                          "0;JMP\n",
