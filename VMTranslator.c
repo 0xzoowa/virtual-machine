@@ -1,16 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <dirent.h>
+#include <limits.h>
+#include <string.h>
 #include "hack-implementation/hack.h"
 #include "parser/parser.h"
 #include "helper.h"
 
+void process_command(const char *);
+
+char out_file[MAX_CHAR];
+Command cmd_type;
+const char *cmd_str;
+const char *arg_1;
+int arg_2;
+char path[PATH_MAX];
+
 int main(int argc, char *argv[])
 {
-    char out_file[MAX_CHAR];
-    Command cmd_type;
-    const char *cmd_str;
-    const char *arg1;
-    int arg2;
 
     if (argc < 2)
     {
@@ -18,20 +25,72 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    const char *file_input = argv[1];
-    validate_input_file(file_input);
+    char *input = argv[1];
 
-    const char *filename = remove_extension(file_input);
-    snprintf(out_file, sizeof(out_file), "%s.asm", filename);
+    DIR *dir = opendir(input);
+    if (dir == NULL) // if null, should be a file
+    {
+        bool is_valid_file = validate_input_file(input);
+        if (!is_valid_file)
+        {
+            exit(EXIT_FAILURE);
+        }
 
-    parser_create(file_input);
-    platform_create(out_file);
+        // construct output file with the specified extension
+        char *filename = remove_extension(input);
+        snprintf(out_file, sizeof(out_file), "%s.asm", filename);
+        set_file_name(get_filename_without_extension(input));
+        process_command(input);
+    }
+    else
+    {
+        struct dirent *entry;
+
+        snprintf(out_file, sizeof(out_file), "%s/%s.asm", input, get_filename_without_extension(input));
+        platform_create(out_file);
+
+        while ((entry = readdir(dir)) != NULL)
+        {
+            // skip .(current dir) and ..(parent dir)
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+                continue;
+
+            snprintf(path, sizeof(path), "%s/%s", input, entry->d_name);
+            bool is_valid_file = validate_input_file(path);
+            if (!is_valid_file)
+            {
+                continue;
+            }
+
+            // set_file_name
+            set_file_name(remove_extension(entry->d_name));
+            process_command(path);
+        }
+        closedir(dir);
+    }
+    end();
+    platform_destroy();
+    parser_destroy();
+
+    return 0;
+}
+
+void process_command(const char *file)
+{
+
+    parser_create(file);
 
     while (has_more_lines())
     {
         advance();
         init_props();
         cmd_type = get_current_cmd_type();
+
+        if (cmd_type == INVALID_TYPE)
+            continue;
+
+        arg_1 = get_current_arg1();
+
         switch (cmd_type)
         {
         case C_ARITHMETIC:
@@ -41,22 +100,31 @@ int main(int argc, char *argv[])
 
         case C_POP:
         case C_PUSH:
-            arg1 = get_current_arg1();
-            arg2 = get_current_arg2();
-            write_push_pop(cmd_type, arg1, arg2);
+            arg_2 = get_current_arg2();
+            write_push_pop(cmd_type, arg_1, arg_2);
             break;
-
-        case INVALID_TYPE:
+        case C_GOTO:
+            write_goto(arg_1);
             break;
-
+        case C_IF:
+            write_if(arg_1);
+            break;
+        case C_LABEL:
+            write_label(arg_1);
+            break;
+        case C_FUNCTION:
+            arg_2 = get_current_arg2();
+            write_function(arg_1, arg_2);
+            break;
+        case C_CALL:
+            arg_2 = get_current_arg2();
+            write_call(arg_1, arg_2);
+            break;
+        case C_RETURN:
+            write_return();
+            break;
         default:
             break;
         }
     }
-
-    end();
-    platform_destroy();
-    parser_destroy();
-
-    return 0;
 }

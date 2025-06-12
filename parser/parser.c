@@ -18,9 +18,9 @@ static void cmd_type(const char *line);
 typedef struct cmd_props
 {
     Command type;
-    const char *cmdstr; // command type
-    const char *arg1;   // segment
-    int arg2;           // non negative integer
+    char *cmdstr; // command type
+    char *arg1;   // segment
+    int arg2;     // non negative integer
 
 } Command_Props;
 
@@ -60,11 +60,18 @@ bool has_more_lines()
     return true;
 }
 
-void advance() // check if current_line is empty whenever you call advance
+void advance()
 {
-    fgets(current_line, MAX_LINE_LENGTH, input);
-    // strip comments and white spaces
-    strip(current_line); // should return an empty string ('\0') if string/line contains only whitespace and comment
+    do
+    {
+        if (!fgets(current_line, MAX_LINE_LENGTH, input))
+        {
+            current_line[0] = '\0'; // end of file
+            return;
+        }
+        strip(current_line);
+    } while (*current_line == '\0');
+    // should return an empty string ('\0') if string/line contains only whitespace and comment
 }
 
 void parser_destroy()
@@ -122,6 +129,10 @@ Command_Props *command_type() // analyse default values for structs and arrays
         cmd_type(tokens[0]);
         if (cmd->type != INVALID_TYPE && cmd->type != C_ARITHMETIC)
         {
+            if (no_of_cmds == 2)
+            {
+                cmd->arg1 = tokens[1];
+            }
             if (no_of_cmds >= 3)
             {
                 cmd->arg1 = tokens[1];
@@ -168,6 +179,15 @@ static int split_line(const char *line, char tokens[][MAX_TOKEN_LENGTH])
 static void cmd_type(const char *line)
 {
     char *arithmetic_logical_cmds[] = {
+
+        "pop",
+        "push",
+        "function",
+        "call",
+        "return",
+        "goto",
+        "if-goto",
+        "label",
         "add",
         "sub",
         "neg",
@@ -177,8 +197,6 @@ static void cmd_type(const char *line)
         "and",
         "or",
         "not",
-        "pop",
-        "push",
     };
 
     size_t len = sizeof(arithmetic_logical_cmds) / sizeof(arithmetic_logical_cmds[0]);
@@ -195,6 +213,30 @@ static void cmd_type(const char *line)
             {
                 cmd->type = C_POP;
             }
+            else if (strcmp(line, "function") == 0)
+            {
+                cmd->type = C_FUNCTION;
+            }
+            else if (strcmp(line, "call") == 0)
+            {
+                cmd->type = C_CALL;
+            }
+            else if (strcmp(line, "return") == 0)
+            {
+                cmd->type = C_RETURN;
+            }
+            else if (strcmp(line, "label") == 0)
+            {
+                cmd->type = C_LABEL;
+            }
+            else if (strcmp(line, "goto") == 0)
+            {
+                cmd->type = C_GOTO;
+            }
+            else if (strcmp(line, "if-goto") == 0)
+            {
+                cmd->type = C_IF;
+            }
             else
             {
                 cmd->type = C_ARITHMETIC;
@@ -208,10 +250,7 @@ static void cmd_type(const char *line)
     return;
 }
 
-const char *arg1()
-// check for default type(INVALID_TYPE) when function is called: char *result = arg1(); if (result != INVALID_TYPE) ...
-// should not be called if the type of the current command is a c_return
-
+char *arg1()
 {
     switch (cmd->type)
     {
@@ -220,15 +259,20 @@ const char *arg1()
 
     case C_PUSH:
     case C_POP:
+    case C_LABEL:
+    case C_GOTO:
+    case C_IF:
+    case C_FUNCTION:
+    case C_CALL:
         return cmd->arg1;
 
     default:
-        return cmd->cmdstr;
+        return cmd->cmdstr; // invalid
     }
 }
 
 int arg2()
-// this function will be called only if the current command is a c_push, c_pop, c_function, c_call
+// should only be called if the current command is a c_push, c_pop, c_function, c_call
 {
     return cmd->arg2;
 }
@@ -255,4 +299,9 @@ int get_current_arg2(void)
 {
     int arg_2 = arg2();
     return arg_2;
+}
+
+char *current_command()
+{
+    return current_line;
 }

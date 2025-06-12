@@ -1,10 +1,15 @@
 {
-    "files.associations": {
-        ".fantomasignore": "ignore",
-        "stdbool.h": "c",
-        "string.h": "c",
-        "stdlib.h": "c",
-        "parser.h": "c",
-        "helper.h": "c"
-    }
+  "files.associations": {
+    ".fantomasignore": "ignore",
+    "stdbool.h": "c",
+    "string.h": "c",
+    "stdlib.h": "c",
+    "parser.h": "c",
+    "helper.h": "c",
+    "platform.h": "c",
+    "__bit_reference": "c",
+    "bitset": "c",
+    "unordered_map": "c",
+    "chrono": "c"
+  }
 }

@@ -1,19 +1,33 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
-void validate_input_file(const char *filename)
+bool validate_input_file(const char *filename)
 {
+
+    // check that the file is a valid file
+
     FILE *file = fopen(filename, "r");
     if (file == NULL)
     {
         fprintf(stderr, "Error opening file %s\n", filename);
-        exit(EXIT_FAILURE);
+        return false;
     }
     fclose(file);
+
+    // check if valid extension
+
+    const char *dot = strrchr(filename, '.'); // returns substring starting at position of the found character
+    if (!dot || strcmp(dot, ".vm") != 0)
+    {
+        fprintf(stderr, "Invalid file extension (expected .vm): %s\n", filename);
+        return false;
+    }
+    return true;
 }
 
-const char *remove_extension(const char *filename)
+char *remove_extension(char *filename)
 {
     char *result;
 
@@ -37,22 +51,22 @@ const char *remove_extension(const char *filename)
     return NULL;
 }
 
-char *get_filename_without_extension(const char *filename)
+char *get_filename_without_extension(char *filename)
 {
     char *result;
 
-    const char *dot = strrchr(filename, '.');
+    char *dot = strrchr(filename, '.');
 
-    const char *slash = strrchr(filename, '/'); // unix
+    char *slash = strrchr(filename, '/'); // unix
     if (!slash)
     {
         slash = strrchr(filename, '\\'); // windows
     }
-    const char *base = (slash) ? slash + 1 : filename; // sets base to just after the slash eg /out => (slash == /) and (slash + 1 == o); pointer arithmetic
+    char *base = (slash) ? slash + 1 : filename; // sets base to just after the slash eg /out => (slash == /) and (slash + 1 == o); pointer arithmetic
 
     if (!dot || (dot < base))
     {
-        return NULL;
+        return base;
     }
 
     size_t len = dot - base;

@@ -7,7 +7,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/VMTranslator",
       "cwd": "${workspaceFolder}",
-      "args": ["/Users/zoowa/desktop/07/BasicTest/BasicTest.vm"],
+      "args": ["/Users/zoowa/desktop/08/FibonacciSeries"],
       "stopAtEntry": false,
       "MIMode": "lldb",  // Or "gdb" depending on your setup
       "preLaunchTask": "Build VMTranslator"
